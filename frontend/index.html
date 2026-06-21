@@ -1,1 +1,1008 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Management System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f4f5f7; color: #1a1a2e; min-height: 100vh; }
+/* ── Layout ── */
+.app { display: flex; min-height: 100vh; }
+/* ── Sidebar ── */
+.sidebar { width: 220px; min-width: 220px; background: #1e1b4b; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; }
+.sidebar-brand { padding: 20px 16px 16px; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+.brand-icon { width: 36px; height: 36px; border-radius: 8px; background: #4f46e5; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.brand-icon i { font-size: 20px; color: #fff; }
+.sidebar-brand h1 { font-size: 14px; font-weight: 500; color: #fff; }
+.sidebar-brand p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+.nav-section { padding: 4px 16px 6px; font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13px; border-left: 3px solid transparent; text-decoration: none; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+.nav-item.active { background: rgba(99,102,241,0.25); color: #a5b4fc; border-left: 3px solid #6366f1; }
+.nav-item i { font-size: 17px; min-width: 17px; }
+.sidebar-footer { padding: 14px 16px; border-top: 0.5px solid rgba(255,255,255,0.1); }
+.user-chip { display: flex; align-items: center; gap: 9px; }
+.user-avatar { width: 30px; height: 30px; border-radius: 50%; background: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: #fff; flex-shrink: 0; }
+.user-info p { font-size: 12px; color: #fff; font-weight: 500; }
+.user-info span { font-size: 11px; color: rgba(255,255,255,0.4); }
+/* ── Main ── */
+.main { flex: 1; margin-left: 220px; display: flex; flex-direction: column; min-height: 100vh; }
+/* ── Topbar ── */
+.topbar { background: #fff; border-bottom: 0.5px solid #e5e7eb; padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+.topbar-left h2 { font-size: 16px; font-weight: 500; color: #111827; }
+.breadcrumb { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.icon-btn { width: 34px; height: 34px; border-radius: 8px; border: 0.5px solid #e5e7eb; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7280; }
+.icon-btn:hover { background: #f9fafb; }
+.icon-btn i { font-size: 17px; }
+/* ── Content ── */
+.content { flex: 1; padding: 20px; }
+/* ── Stats ── */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; }
+.stat-label { font-size: 12px; color: #6b7280; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.stat-label i { font-size: 15px; }
+.stat-value { font-size: 22px; font-weight: 500; color: #111827; }
+.stat-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; padding: 2px 7px; border-radius: 20px; margin-top: 4px; }
+.pill-green { background: #d1fae5; color: #065f46; }
+.pill-blue  { background: #dbeafe; color: #1e40af; }
+.pill-amber { background: #fef3c7; color: #92400e; }
+.pill-violet { background: #ede9fe; color: #5b21b6; }
+/* ── Section Header ── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.section-title { font-size: 15px; font-weight: 500; color: #111827; }
+.btn-primary { background: #4f46e5; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+.btn-primary:hover { background: #4338ca; }
+.btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+.btn-primary i { font-size: 15px; }
+/* ── Search & Filter ── */
+.search-filter { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.search-wrap { flex: 1; min-width: 180px; position: relative; }
+.search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #9ca3af; pointer-events: none; }
+.search-wrap input { width: 100%; padding: 8px 10px 8px 34px; font-size: 13px; border: 0.5px solid #e5e7eb; border-radius: 8px; background: #fff; color: #111827; font-family: inherit; }
+.search-wrap input:focus { outline: none; border-color: #6366f1; }
+select.filter-select { padding: 8px 10px; font-size: 13px; border: 0.5px solid #e5e7eb; border-radius: 8px; background: #fff; color: #374151; font-family: inherit; cursor: pointer; }
+/* ── Table ── */
+.table-wrap { background: #fff; border: 0.5px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th { padding: 10px 14px; font-size: 11px; font-weight: 500; color: #6b7280; text-align: left; background: #f9fafb; border-bottom: 0.5px solid #e5e7eb; text-transform: uppercase; letter-spacing: 0.04em; }
+td { padding: 11px 14px; font-size: 13px; color: #111827; border-bottom: 0.5px solid #f3f4f6; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+.avatar-cell { display: flex; align-items: center; gap: 10px; }
+.av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+.av-purple { background: #ede9fe; color: #5b21b6; }
+.av-teal   { background: #d1fae5; color: #065f46; }
+.av-blue   { background: #dbeafe; color: #1e40af; }
+.av-coral  { background: #fee2e2; color: #991b1b; }
+.av-amber  { background: #fef3c7; color: #92400e; }
+.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.badge-active   { background: #d1fae5; color: #065f46; }
+.badge-inactive { background: #f3f4f6; color: #6b7280; }
+.badge-passed   { background: #dbeafe; color: #1e40af; }
+.action-btns { display: flex; gap: 4px; }
+.act-btn { width: 28px; height: 28px; border-radius: 8px; border: 0.5px solid #e5e7eb; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6b7280; }
+.act-btn:hover { background: #f3f4f6; color: #111827; }
+.act-btn.del:hover { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.act-btn i { font-size: 14px; pointer-events: none; }
+/* ── Skeleton loader ── */
+.skeleton-row td { padding: 14px; }
+.skeleton { background: linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; height: 14px; }
+.skeleton.short { width: 60%; }
+.skeleton.circle { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+/* ── Pagination ── */
+.table-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 0.5px solid #f3f4f6; background: #f9fafb; flex-wrap: wrap; gap: 8px; }
+.page-info { font-size: 12px; color: #6b7280; }
+.page-btns { display: flex; gap: 4px; }
+.pg-btn { width: 28px; height: 28px; border-radius: 8px; border: 0.5px solid #e5e7eb; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #6b7280; font-family: inherit; }
+.pg-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+/* ── Modals ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; border: 0.5px solid #e5e7eb; width: 440px; max-width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.modal-lg { width: 640px; }
+.modal-header { padding: 16px 20px; border-bottom: 0.5px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 15px; font-weight: 500; color: #111827; }
+.modal-body { padding: 20px; }
+.modal-lg .modal-body { max-height: 64vh; overflow-y: auto; }
+.form-row { margin-bottom: 14px; }
+.form-row label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 5px; }
+.form-row input, .form-row select { width: 100%; padding: 8px 10px; font-size: 13px; border: 0.5px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #111827; font-family: inherit; }
+.form-row input:focus, .form-row select:focus { outline: none; border-color: #6366f1; background: #fff; }
+.form-row input.error, .form-row select.error { border-color: #dc2626; }
+.form-row select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+.form-row .readonly-field { font-size: 13px; color: #6b7280; padding: 8px 10px; background: #f9fafb; border: 0.5px solid #e5e7eb; border-radius: 8px; }
+.photo-upload-row { display: flex; align-items: center; gap: 12px; }
+.photo-preview { width: 56px; height: 56px; border-radius: 50%; background: #f9fafb; border: 0.5px solid #e5e7eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; color: #9ca3af; }
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-preview i { font-size: 22px; }
+.photo-upload-controls { flex: 1; }
+.photo-upload-controls input[type="file"] { width: 100%; font-size: 12px; color: #6b7280; }
+.photo-upload-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-section-title { font-size: 11px; font-weight: 600; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.06em; margin: 4px 0 12px; padding-bottom: 7px; border-bottom: 0.5px solid #e5e7eb; }
+.form-section-title:first-child { margin-top: 0; }
+.modal-footer { padding: 14px 20px; border-top: 0.5px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
+.btn-ghost { background: transparent; border: 0.5px solid #e5e7eb; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; color: #6b7280; font-family: inherit; }
+.btn-ghost:hover { background: #f9fafb; }
+.delete-modal .modal-body { text-align: center; padding: 24px 20px; }
+.del-icon { width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+.del-icon i { font-size: 24px; color: #dc2626; }
+.delete-modal p { font-size: 13px; color: #6b7280; margin-top: 6px; line-height: 1.6; }
+.btn-danger { background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-danger:disabled { background: #fca5a5; cursor: not-allowed; }
+/* ── View modal ── */
+.view-section-title { font-size: 11px; font-weight: 600; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 6px; padding-top: 14px; border-top: 0.5px solid #f3f4f6; }
+.view-section-title:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.view-table { width: 100%; border-collapse: collapse; }
+.view-table td { padding: 6px 0; font-size: 13px; color: #111827; border: none; }
+.view-table td:first-child { font-size: 12px; color: #6b7280; width: 40%; }
+.view-table td i { font-size: 14px; vertical-align: -2px; margin-right: 6px; }
+/* ── Error banner ── */
+.error-banner { background: #fee2e2; border: 0.5px solid #fca5a5; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #991b1b; margin-bottom: 14px; display: none; align-items: center; gap: 8px; }
+.error-banner.show { display: flex; }
+/* ── Toast ── */
+.toast { position: fixed; bottom: 24px; right: 24px; background: #1e1b4b; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; z-index: 999; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.toast.show { display: flex; }
+.toast.error-toast { background: #dc2626; }
+/* ── Responsive ── */
+@media (max-width: 768px) {
+.sidebar { width: 56px; min-width: 56px; }
+.sidebar-brand h1,.sidebar-brand p,.nav-section,.nav-item span,.user-info { display: none; }
+.sidebar-brand { padding: 14px 10px; }
+.brand-icon { margin: 0; }
+.nav-item { padding: 12px; justify-content: center; gap: 0; }
+.sidebar-footer { padding: 10px; }
+.user-chip { justify-content: center; }
+.main { margin-left: 56px; }
+.stats-row { grid-template-columns: 1fr 1fr; }
+.form-grid { grid-template-columns: 1fr; }
+.modal-lg { width: 100%; }
+th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4) { display: none; }
+  }
+@media (max-width: 480px) {
+.content { padding: 12px; }
+.search-filter { flex-direction: column; }
+.stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+th:nth-child(2),td:nth-child(2) { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+<!-- Sidebar -->
+<aside class="sidebar">
+<div class="sidebar-brand">
+<div class="brand-icon"><i class="ti ti-school"></i></div>
+<h1>EduAdmin</h1>
+<p>Super Admin</p>
+</div>
+<nav class="sidebar-nav">
+<div class="nav-section">Main</div>
+<a class="nav-item" href="#"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
+<div class="nav-section">Academics</div>
+<a class="nav-item active" href="#"><i class="ti ti-users"></i><span>Students</span></a>
+<a class="nav-item" href="#"><i class="ti ti-chalkboard"></i><span>Teachers</span></a>
+<a class="nav-item" href="#"><i class="ti ti-book"></i><span>Classes</span></a>
+<a class="nav-item" href="#"><i class="ti ti-calendar-event"></i><span>Attendance</span></a>
+<div class="nav-section">Finance</div>
+<a class="nav-item" href="#"><i class="ti ti-receipt"></i><span>Fees</span></a>
+<div class="nav-section">System</div>
+<a class="nav-item" href="#"><i class="ti ti-settings"></i><span>Settings</span></a>
+</nav>
+<div class="sidebar-footer">
+<div class="user-chip">
+<div class="user-avatar">SA</div>
+<div class="user-info"><p>Super Admin</p><span>admin@school.edu</span></div>
+</div>
+</div>
+</aside>
+<!-- Main -->
+<div class="main">
+<div class="topbar">
+<div class="topbar-left">
+<h2>Student Management</h2>
+<div class="breadcrumb"><span>Dashboard</span><i class="ti ti-chevron-right"></i><span>Students</span></div>
+</div>
+<div class="topbar-right">
+<button class="icon-btn" title="Refresh" onclick="fetchStudents()"><i class="ti ti-refresh" id="refresh-icon"></i></button>
+<button class="icon-btn" title="Notifications"><i class="ti ti-bell"></i></button>
+<button class="icon-btn" title="Account"><i class="ti ti-user-circle"></i></button>
+</div>
+</div>
+<div class="content">
+<!-- Stats -->
+<div class="stats-row">
+<div class="stat-card">
+<div class="stat-label"><i class="ti ti-users"></i> Total Students</div>
+<div class="stat-value" id="stat-total">—</div>
+<div class="stat-pill pill-green" id="stat-total-sub">Loading…</div>
+</div>
+<div class="stat-card">
+<div class="stat-label"><i class="ti ti-user-check"></i> Active</div>
+<div class="stat-value" id="stat-active">—</div>
+<div class="stat-pill pill-blue" id="stat-active-pct">—</div>
+</div>
+<div class="stat-card">
+<div class="stat-label"><i class="ti ti-door-enter"></i> New Admissions</div>
+<div class="stat-value" id="stat-new">—</div>
+<div class="stat-pill pill-amber">This session</div>
+</div>
+<div class="stat-card">
+<div class="stat-label"><i class="ti ti-certificate"></i> Passed</div>
+<div class="stat-value" id="stat-passed">—</div>
+<div class="stat-pill pill-violet">All-time</div>
+</div>
+</div>
+<!-- Error banner -->
+<div class="error-banner" id="error-banner"><i class="ti ti-alert-circle"></i><span id="error-msg"></span></div>
+<!-- Table section -->
+<div class="section-header">
+<span class="section-title">All Students</span>
+<button class="btn-primary" onclick="openAddModal()"><i class="ti ti-plus"></i>Add Student</button>
+</div>
+<div class="search-filter">
+<div class="search-wrap">
+<i class="ti ti-search"></i>
+<input type="text" id="search-input" placeholder="Search by name or registration number…" oninput="onSearchInput(this.value)">
+</div>
+<select class="filter-select" id="class-filter" onchange="fetchStudents()">
+<option value="">All Classes</option>
+</select>
+<select class="filter-select" id="status-filter" onchange="fetchStudents()">
+<option value="">All Status</option>
+<option>Active</option><option>Inactive</option><option>Passed</option>
+</select>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th style="width:30%">Student</th>
+<th style="width:14%">Registration No.</th>
+<th style="width:16%">Class & Section</th>
+<th style="width:16%">Guardian</th>
+<th style="width:12%">Status</th>
+<th style="width:12%">Actions</th>
+</tr>
+</thead>
+<tbody id="student-table"></tbody>
+</table>
+<div class="table-footer">
+<span class="page-info" id="page-info">Loading…</span>
+<div class="page-btns" id="page-btns"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Add Student Modal -->
+<div class="modal-overlay" id="modal-add">
+<div class="modal modal-lg">
+<div class="modal-header">
+<h3>Add New Student</h3>
+<button class="act-btn" onclick="closeModal('add')" aria-label="Close"><i class="ti ti-x"></i></button>
+</div>
+<div class="modal-body">
+<div class="form-row"><label>Registration Number</label><input type="text" id="add-regno" placeholder="Leave blank to auto-generate"></div>
+
+<div class="form-section-title">Personal Information</div>
+<div class="form-grid">
+<div class="form-row"><label>First Name *</label><input type="text" id="add-fname" placeholder="e.g. Riya"></div>
+<div class="form-row"><label>Last Name *</label><input type="text" id="add-lname" placeholder="e.g. Sharma"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Gender</label>
+<select id="add-gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+</div>
+<div class="form-row"><label>Date of Birth</label><input type="date" id="add-dob"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Blood Group</label>
+<select id="add-bloodgroup"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+</div>
+<div class="form-row">
+<label>Student Photo</label>
+<div class="photo-upload-row">
+<div class="photo-preview" id="add-photo-preview"><i class="ti ti-photo"></i></div>
+<div class="photo-upload-controls">
+<input type="file" id="add-photo-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="handlePhotoUpload('add', this)">
+<div class="photo-upload-hint" id="add-photo-status">JPG, PNG, WEBP or GIF, up to 5MB</div>
+</div>
+</div>
+<input type="hidden" id="add-photo">
+</div>
+</div>
+<div class="form-row"><label>APAAR ID (Personal)</label><input type="text" id="add-apaar-personal" placeholder="12-digit APAAR ID"></div>
+
+<div class="form-section-title">Identification</div>
+<div class="form-grid">
+<div class="form-row"><label>Aadhaar Number</label><input type="text" id="add-aadhaar" placeholder="XXXX XXXX XXXX"></div>
+<div class="form-row"><label>APAAR ID (Identification)</label><input type="text" id="add-apaar-id" placeholder="12-digit APAAR ID"></div>
+</div>
+
+<div class="form-section-title">Contact</div>
+<div class="form-grid">
+<div class="form-row"><label>Email</label><input type="text" id="add-email" placeholder="student@email.com"></div>
+<div class="form-row"><label>Phone</label><input type="text" id="add-phone" placeholder="+91 00000 00000"></div>
+</div>
+<div class="form-row"><label>House / Street</label><input type="text" id="add-house" placeholder="House no., street"></div>
+<div class="form-grid">
+<div class="form-row"><label>City</label><input type="text" id="add-city"></div>
+<div class="form-row"><label>State</label><input type="text" id="add-state"></div>
+</div>
+<div class="form-row"><label>Pincode</label><input type="text" id="add-pincode" placeholder="6-digit pincode"></div>
+
+<div class="form-section-title">Academic</div>
+<div class="form-grid">
+<div class="form-row"><label>Class *</label>
+<select id="add-class"><option value="">Select class</option></select>
+</div>
+<div class="form-row"><label>Section *</label>
+<select id="add-section" disabled><option value="">Select class first</option></select>
+</div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Roll Number</label><input type="number" id="add-roll" placeholder="e.g. 42"></div>
+<div class="form-row"><label>Admission Date</label><input type="date" id="add-admission"></div>
+</div>
+
+<div class="form-section-title">Guardian</div>
+<div class="form-grid">
+<div class="form-row"><label>Father's Name</label><input type="text" id="add-father"></div>
+<div class="form-row"><label>Mother's Name</label><input type="text" id="add-mother"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Guardian Name</label><input type="text" id="add-guardian" placeholder="If different from parents"></div>
+<div class="form-row"><label>Relation</label><input type="text" id="add-relation" placeholder="e.g. Uncle"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Guardian Phone</label><input type="text" id="add-gphone"></div>
+<div class="form-row"><label>Guardian Email</label><input type="text" id="add-gemail"></div>
+</div>
+
+<div class="form-section-title">Status</div>
+<div class="form-row"><label>Status</label>
+<select id="add-status"><option>Active</option><option>Inactive</option><option>Passed</option></select>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn-ghost" onclick="closeModal('add')">Cancel</button>
+<button class="btn-primary" id="btn-save-add" onclick="addStudent()"><i class="ti ti-check"></i>Save Student</button>
+</div>
+</div>
+</div>
+<!-- Edit Student Modal -->
+<div class="modal-overlay" id="modal-edit">
+<div class="modal modal-lg">
+<div class="modal-header">
+<h3>Edit Student</h3>
+<button class="act-btn" onclick="closeModal('edit')" aria-label="Close"><i class="ti ti-x"></i></button>
+</div>
+<div class="modal-body">
+<div class="form-row"><label>Registration Number</label><div class="readonly-field" id="edit-regno-display">—</div></div>
+
+<div class="form-section-title">Personal Information</div>
+<div class="form-grid">
+<div class="form-row"><label>First Name *</label><input type="text" id="edit-fname"></div>
+<div class="form-row"><label>Last Name *</label><input type="text" id="edit-lname"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Gender</label>
+<select id="edit-gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+</div>
+<div class="form-row"><label>Date of Birth</label><input type="date" id="edit-dob"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Blood Group</label>
+<select id="edit-bloodgroup"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+</div>
+<div class="form-row">
+<label>Student Photo</label>
+<div class="photo-upload-row">
+<div class="photo-preview" id="edit-photo-preview"><i class="ti ti-photo"></i></div>
+<div class="photo-upload-controls">
+<input type="file" id="edit-photo-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="handlePhotoUpload('edit', this)">
+<div class="photo-upload-hint" id="edit-photo-status">JPG, PNG, WEBP or GIF, up to 5MB</div>
+</div>
+</div>
+<input type="hidden" id="edit-photo">
+</div>
+</div>
+<div class="form-row"><label>APAAR ID (Personal)</label><input type="text" id="edit-apaar-personal"></div>
+
+<div class="form-section-title">Identification</div>
+<div class="form-grid">
+<div class="form-row"><label>Aadhaar Number</label><input type="text" id="edit-aadhaar"></div>
+<div class="form-row"><label>APAAR ID (Identification)</label><input type="text" id="edit-apaar-id"></div>
+</div>
+
+<div class="form-section-title">Contact</div>
+<div class="form-grid">
+<div class="form-row"><label>Email</label><input type="text" id="edit-email"></div>
+<div class="form-row"><label>Phone</label><input type="text" id="edit-phone"></div>
+</div>
+<div class="form-row"><label>House / Street</label><input type="text" id="edit-house"></div>
+<div class="form-grid">
+<div class="form-row"><label>City</label><input type="text" id="edit-city"></div>
+<div class="form-row"><label>State</label><input type="text" id="edit-state"></div>
+</div>
+<div class="form-row"><label>Pincode</label><input type="text" id="edit-pincode"></div>
+
+<div class="form-section-title">Academic</div>
+<div class="form-grid">
+<div class="form-row"><label>Class *</label>
+<select id="edit-class"><option value="">Select class</option></select>
+</div>
+<div class="form-row"><label>Section *</label>
+<select id="edit-section" disabled><option value="">Select class first</option></select>
+</div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Roll Number</label><input type="number" id="edit-roll"></div>
+<div class="form-row"><label>Admission Date</label><input type="date" id="edit-admission"></div>
+</div>
+
+<div class="form-section-title">Guardian</div>
+<div class="form-grid">
+<div class="form-row"><label>Father's Name</label><input type="text" id="edit-father"></div>
+<div class="form-row"><label>Mother's Name</label><input type="text" id="edit-mother"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Guardian Name</label><input type="text" id="edit-guardian"></div>
+<div class="form-row"><label>Relation</label><input type="text" id="edit-relation"></div>
+</div>
+<div class="form-grid">
+<div class="form-row"><label>Guardian Phone</label><input type="text" id="edit-gphone"></div>
+<div class="form-row"><label>Guardian Email</label><input type="text" id="edit-gemail"></div>
+</div>
+
+<div class="form-section-title">Status</div>
+<div class="form-row"><label>Status</label>
+<select id="edit-status"><option>Active</option><option>Inactive</option><option>Passed</option></select>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn-ghost" onclick="closeModal('edit')">Cancel</button>
+<button class="btn-primary" id="btn-save-edit" onclick="saveEdit()"><i class="ti ti-check"></i>Update Student</button>
+</div>
+</div>
+</div>
+<!-- Delete Modal -->
+<div class="modal-overlay" id="modal-delete">
+<div class="modal delete-modal">
+<div class="modal-header">
+<h3>Delete Student</h3>
+<button class="act-btn" onclick="closeModal('delete')" aria-label="Close"><i class="ti ti-x"></i></button>
+</div>
+<div class="modal-body">
+<div class="del-icon"><i class="ti ti-trash"></i></div>
+<p style="font-size:14px;font-weight:500;color:#111827;">Remove this student?</p>
+<p>This action cannot be undone. All records for <strong id="del-name"></strong> will be permanently deleted.</p>
+</div>
+<div class="modal-footer">
+<button class="btn-ghost" onclick="closeModal('delete')">Cancel</button>
+<button class="btn-danger" id="btn-confirm-delete" onclick="confirmDelete()">Yes, Delete</button>
+</div>
+</div>
+</div>
+<!-- View Modal -->
+<div class="modal-overlay" id="modal-view">
+<div class="modal">
+<div class="modal-header">
+<h3>Student Profile</h3>
+<button class="act-btn" onclick="closeModal('view')" aria-label="Close"><i class="ti ti-x"></i></button>
+</div>
+<div class="modal-body" id="view-body"></div>
+<div class="modal-footer">
+<button class="btn-ghost" onclick="closeModal('view')">Close</button>
+</div>
+</div>
+</div>
+<!-- Toast -->
+<div class="toast" id="toast"><i class="ti ti-check" id="toast-icon"></i><span id="toast-msg"></span></div>
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:5001/api';
+// ── State ───────────────────────────────────────────────────────────────────
+let students    = [];
+let classes     = [];
+let sections    = [];
+let editId      = null;
+let deleteId    = null;
+let searchTimer = null;
+const avColors  = ['av-purple','av-teal','av-blue','av-coral','av-amber'];
+// ── Small helpers ───────────────────────────────────────────────────────────
+function val(id)       { return (document.getElementById(id).value || '').trim(); }
+function valOrUndef(id){ const v = val(id); return v ? v : undefined; }
+function setVal(id, v) { document.getElementById(id).value = v ?? ''; }
+function toDateInput(d){ if (!d) return ''; const dt = new Date(d); return isNaN(dt) ? '' : dt.toISOString().slice(0,10); }
+function fmtDate(d)    { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+
+function initials(s) {
+  const p = s.personal || {};
+  return ((p.firstName?.[0] ?? '') + (p.lastName?.[0] ?? '')).toUpperCase();
+}
+function avatarColor(id) {
+  const idx = parseInt((id || '').replace(/\D/g,'').slice(-4) || '0', 10) % avColors.length;
+  return avColors[idx];
+}
+function avatarHtml(s, size) {
+  const sizeAttr = size ? `width:${size}px;height:${size}px;font-size:${Math.round(size*0.3)}px` : '';
+  const photo = s.personal?.photo;
+  if (photo) return `<img src="${photo}" class="av" style="object-fit:cover;${sizeAttr}" alt="" onerror="this.outerHTML='<div class=\\'av ${avatarColor(s._id)}\\' style=\\'${sizeAttr}\\'>${initials(s)}</div>'">`;
+  return `<div class="av ${avatarColor(s._id)}" style="${sizeAttr}">${initials(s)}</div>`;
+}
+function badgeClass(st) {
+  return st === 'Active' ? 'badge-active' : st === 'Passed' ? 'badge-passed' : 'badge-inactive';
+}
+// ── Photo upload (Cloudflare R2 via backend) ─────────────────────────────────
+async function handlePhotoUpload(prefix, inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  const preview = document.getElementById(`${prefix}-photo-preview`);
+  const status  = document.getElementById(`${prefix}-photo-status`);
+  const previousUrl = val(`${prefix}-photo`);
+
+  preview.innerHTML = `<i class="ti ti-loader-2" style="animation:spin 0.8s linear infinite"></i>`;
+  status.textContent = 'Uploading…';
+
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    const res  = await fetch(`${API_BASE}/upload/photo`, { method: 'POST', body: formData });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+
+    setVal(`${prefix}-photo`, json.data.url);
+    preview.innerHTML = `<img src="${json.data.url}" alt="">`;
+    status.textContent = 'Uploaded';
+
+    // Clean up the previously uploaded-but-unsaved file, if any, so it doesn't sit orphaned in R2
+    if (previousUrl) {
+      fetch(`${API_BASE}/upload/photo?url=${encodeURIComponent(previousUrl)}`, { method: 'DELETE' }).catch(() => {});
+    }
+  } catch (err) {
+    showToast(err.message || 'Photo upload failed.', true);
+    preview.innerHTML = `<i class="ti ti-photo"></i>`;
+    status.textContent = 'JPG, PNG, WEBP or GIF, up to 5MB';
+    inputEl.value = '';
+  }
+}
+function guardianDisplay(s) {
+  const g = s.guardian || {};
+  return g.guardianName || g.fatherName || g.motherName || '—';
+}
+function classLabel(s) {
+  const cls = s.academic?.class;
+  if (!cls) return '—';
+  if (typeof cls === 'object' && cls.name) return cls.name;
+  return classes.find(c => c._id === cls)?.name || '—';
+}
+function sectionLabel(s) {
+  const sec = s.academic?.section;
+  if (!sec) return '';
+  if (typeof sec === 'object' && sec.name) return sec.name;
+  return sections.find(x => x._id === sec)?.name || '';
+}
+function classSectionDisplay(s) {
+  const c = classLabel(s), sec = sectionLabel(s);
+  return sec ? `${c} - ${sec}` : c;
+}
+function fullName(s) {
+  const p = s.personal || {};
+  return `${p.firstName || ''} ${p.lastName || ''}`.trim();
+}
+function setLoading(btnId, loading, label = '') {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) btn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin 0.8s linear infinite"></i> Loading…`;
+  else btn.innerHTML = label;
+}
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-icon').className = isError ? 'ti ti-alert-circle' : 'ti ti-check';
+  t.className = 'toast show' + (isError ? ' error-toast' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function showError(msg) {
+  const b = document.getElementById('error-banner');
+  document.getElementById('error-msg').textContent = msg;
+  b.classList.add('show');
+}
+function hideError() { document.getElementById('error-banner').classList.remove('show'); }
+function openModal(id)  { document.getElementById('modal-'+id).classList.add('open'); }
+function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
+// ── Skeleton loader ──────────────────────────────────────────────────────────
+function showSkeletons() {
+  const tb = document.getElementById('student-table');
+  tb.innerHTML = Array(6).fill('').map(() => `
+      <tr class="skeleton-row">
+        <td><div style="display:flex;align-items:center;gap:10px"><div class="skeleton circle"></div><div class="skeleton" style="flex:1;max-width:160px"></div></div></td>
+        <td><div class="skeleton short"></div></td>
+        <td><div class="skeleton short"></div></td>
+        <td><div class="skeleton short"></div></td>
+        <td><div class="skeleton" style="width:60px"></div></td>
+        <td><div class="skeleton" style="width:80px"></div></td>
+      </tr>`).join('');
+}
+// ── Fetch classes & sections (for filters and form selects) ─────────────────
+async function fetchMeta() {
+  try {
+    const [classRes, sectionRes] = await Promise.all([
+      fetch(`${API_BASE}/classes`),
+      fetch(`${API_BASE}/sections`)
+    ]);
+    const classJson   = await classRes.json();
+    const sectionJson = await sectionRes.json();
+    classes  = classJson.data  || [];
+    sections = sectionJson.data || [];
+  } catch (err) {
+    classes = []; sections = [];
+    showError('Could not load class/section list. Make sure /api/classes and /api/sections are available.');
+  }
+  populateClassSelects();
+}
+function populateClassSelects() {
+  const opts = classes.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+  document.getElementById('class-filter').innerHTML = '<option value="">All Classes</option>' + opts;
+  document.getElementById('add-class').innerHTML  = '<option value="">Select class</option>' + opts;
+  document.getElementById('edit-class').innerHTML = '<option value="">Select class</option>' + opts;
+}
+function populateSectionSelect(selectId, classId, selectedSectionId = '') {
+  const sel = document.getElementById(selectId);
+  if (!classId) {
+    sel.innerHTML = '<option value="">Select class first</option>';
+    sel.disabled = true;
+    return;
+  }
+  const filtered = sections.filter(s => (s.class?._id || s.class) === classId);
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">Select section</option>' +
+    filtered.map(s => `<option value="${s._id}" ${s._id === selectedSectionId ? 'selected' : ''}>${s.name}</option>`).join('');
+}
+// ── Fetch all students ───────────────────────────────────────────────────────
+async function fetchStudents() {
+  hideError();
+  showSkeletons();
+  const search    = document.getElementById('search-input').value.trim();
+  const classId   = document.getElementById('class-filter').value;
+  const status    = document.getElementById('status-filter').value;
+  const params = new URLSearchParams();
+  if (search)  params.set('search', search);
+  if (classId) params.set('class', classId);
+  if (status)  params.set('status', status);
+  document.getElementById('refresh-icon').style.animation = 'spin 0.8s linear infinite';
+  try {
+    const res  = await fetch(`${API_BASE}/students?${params}`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    students = json.data;
+    updateStats(json.summary);
+    renderTable();
+  } catch (err) {
+    showError('Could not load students. Make sure the backend is running at ' + API_BASE);
+    renderEmptyTable('Server unreachable. Check your backend connection.');
+  } finally {
+    document.getElementById('refresh-icon').style.animation = '';
+  }
+}
+function onSearchInput(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(fetchStudents, 400); // debounce 400ms
+}
+// ── Update stat cards ────────────────────────────────────────────────────────
+function updateStats(s) {
+  if (!s) return;
+  document.getElementById('stat-total').textContent  = (s.total ?? 0).toLocaleString();
+  document.getElementById('stat-active').textContent = (s.active ?? 0).toLocaleString();
+  document.getElementById('stat-new').textContent    = (s.newAdmissions ?? 0).toLocaleString();
+  document.getElementById('stat-passed').textContent = (s.passed ?? 0).toLocaleString();
+  const pct = s.total ? Math.round(((s.active ?? 0) / s.total) * 100) : 0;
+  document.getElementById('stat-active-pct').textContent = pct + '% enrolled';
+  document.getElementById('stat-total-sub').textContent  = 'Total registered';
+}
+// ── Render table ─────────────────────────────────────────────────────────────
+function renderTable() {
+  const tb = document.getElementById('student-table');
+  if (!students.length) {
+    renderEmptyTable('No students match your search.');
+    return;
+  }
+  tb.innerHTML = students.map(s => `
+      <tr>
+        <td><div class="avatar-cell">
+          ${avatarHtml(s)}
+          <div><div style="font-weight:500">${fullName(s)}</div>
+          <div style="font-size:11px;color:#6b7280">${s.registrationNumber || '—'}</div></div>
+        </div></td>
+        <td style="color:#6b7280;font-size:12px">${s.registrationNumber || '—'}</td>
+        <td>${classSectionDisplay(s)}</td>
+        <td style="font-size:12px;color:#6b7280">${guardianDisplay(s)}</td>
+        <td><span class="badge ${badgeClass(s.status)}">${s.status || '—'}</span></td>
+        <td><div class="action-btns">
+          <button class="act-btn" title="View"   onclick="viewStudent('${s._id}')"><i class="ti ti-eye"></i></button>
+          <button class="act-btn" title="Edit"   onclick="openEdit('${s._id}')"><i class="ti ti-edit"></i></button>
+          <button class="act-btn del" title="Delete" onclick="openDelete('${s._id}','${fullName(s).replace(/'/g, "\\'")}')"><i class="ti ti-trash"></i></button>
+        </div></td>
+      </tr>`).join('');
+  document.getElementById('page-info').textContent = `Showing ${students.length} student${students.length !== 1 ? 's' : ''}`;
+}
+function renderEmptyTable(msg) {
+  document.getElementById('student-table').innerHTML =
+    `<tr><td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;font-size:13px">
+        <i class="ti ti-users-off" style="font-size:28px;display:block;margin-bottom:8px"></i>${msg}
+      </td></tr>`;
+  document.getElementById('page-info').textContent = '0 students';
+}
+// ── Build payload from a form (add- or edit- prefix) ─────────────────────────
+function buildPayload(prefix) {
+  const rollRaw = valOrUndef(`${prefix}-roll`);
+  return {
+    personal: {
+      firstName:  val(`${prefix}-fname`),
+      lastName:   val(`${prefix}-lname`),
+      gender:     valOrUndef(`${prefix}-gender`),
+      dob:        valOrUndef(`${prefix}-dob`),
+      bloodGroup: valOrUndef(`${prefix}-bloodgroup`),
+      photo:      valOrUndef(`${prefix}-photo`),
+      APAARid:    valOrUndef(`${prefix}-apaar-personal`)
+    },
+    identification: {
+      aadhaarNumber: valOrUndef(`${prefix}-aadhaar`),
+      apaarId:       valOrUndef(`${prefix}-apaar-id`)
+    },
+    contact: {
+      email: valOrUndef(`${prefix}-email`),
+      phone: valOrUndef(`${prefix}-phone`),
+      address: {
+        house:   valOrUndef(`${prefix}-house`),
+        city:    valOrUndef(`${prefix}-city`),
+        state:   valOrUndef(`${prefix}-state`),
+        pincode: valOrUndef(`${prefix}-pincode`)
+      }
+    },
+    academic: {
+      class:         val(`${prefix}-class`),
+      section:       val(`${prefix}-section`),
+      rollNumber:    rollRaw ? Number(rollRaw) : undefined,
+      admissionDate: valOrUndef(`${prefix}-admission`)
+    },
+    guardian: {
+      fatherName:   valOrUndef(`${prefix}-father`),
+      motherName:   valOrUndef(`${prefix}-mother`),
+      guardianName: valOrUndef(`${prefix}-guardian`),
+      relation:     valOrUndef(`${prefix}-relation`),
+      phone:        valOrUndef(`${prefix}-gphone`),
+      email:        valOrUndef(`${prefix}-gemail`)
+    },
+    status: val(`${prefix}-status`) || 'Active'
+  };
+}
+function validatePayload(p) {
+  return p.personal.firstName && p.personal.lastName && p.academic.class && p.academic.section;
+}
+// ── Add student ───────────────────────────────────────────────────────────────
+function openAddModal() {
+  resetAddForm();
+  openModal('add');
+}
+function resetAddForm() {
+  ['add-regno','add-fname','add-lname','add-dob','add-apaar-personal','add-aadhaar','add-apaar-id',
+   'add-email','add-phone','add-house','add-city','add-state','add-pincode','add-roll','add-admission',
+   'add-father','add-mother','add-guardian','add-relation','add-gphone','add-gemail'].forEach(id => setVal(id, ''));
+  document.getElementById('add-gender').value     = '';
+  document.getElementById('add-bloodgroup').value = '';
+  document.getElementById('add-class').value      = '';
+  document.getElementById('add-status').value     = 'Active';
+  populateSectionSelect('add-section', '');
+  setVal('add-photo', '');
+  document.getElementById('add-photo-file').value = '';
+  document.getElementById('add-photo-preview').innerHTML = `<i class="ti ti-photo"></i>`;
+  document.getElementById('add-photo-status').textContent = 'JPG, PNG, WEBP or GIF, up to 5MB';
+}
+async function addStudent() {
+  const payload = buildPayload('add');
+  const regNo   = valOrUndef('add-regno');
+  if (regNo) payload.registrationNumber = regNo;
+  if (!validatePayload(payload)) {
+    showToast('Please fill in all required fields (name, class, section).', true);
+    return;
+  }
+  setLoading('btn-save-add', true);
+  try {
+    const res  = await fetch(`${API_BASE}/students`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    closeModal('add');
+    await fetchStudents();
+    showToast('Student added successfully!');
+  } catch (err) {
+    showToast(err.message || 'Failed to add student.', true);
+  } finally {
+    setLoading('btn-save-add', false, '<i class="ti ti-check"></i>Save Student');
+  }
+}
+// ── Edit student ──────────────────────────────────────────────────────────────
+function openEdit(id) {
+  editId = id;
+  const s = students.find(x => x._id === id);
+  if (!s) return;
+  const p = s.personal || {}, idf = s.identification || {}, c = s.contact || {}, addr = c.address || {};
+  const ac = s.academic || {}, g = s.guardian || {};
+  const classId   = ac.class?._id   || ac.class   || '';
+  const sectionId = ac.section?._id || ac.section || '';
+
+  document.getElementById('edit-regno-display').textContent = s.registrationNumber || '—';
+  setVal('edit-fname', p.firstName);
+  setVal('edit-lname', p.lastName);
+  document.getElementById('edit-gender').value = p.gender || '';
+  setVal('edit-dob', toDateInput(p.dob));
+  document.getElementById('edit-bloodgroup').value = p.bloodGroup || '';
+  setVal('edit-photo', p.photo);
+  document.getElementById('edit-photo-file').value = '';
+  document.getElementById('edit-photo-preview').innerHTML = p.photo
+    ? `<img src="${p.photo}" alt="">`
+    : `<i class="ti ti-photo"></i>`;
+  document.getElementById('edit-photo-status').textContent = 'JPG, PNG, WEBP or GIF, up to 5MB';
+  setVal('edit-apaar-personal', p.APAARid);
+
+  setVal('edit-aadhaar', idf.aadhaarNumber);
+  setVal('edit-apaar-id', idf.apaarId);
+
+  setVal('edit-email', c.email);
+  setVal('edit-phone', c.phone);
+  setVal('edit-house', addr.house);
+  setVal('edit-city', addr.city);
+  setVal('edit-state', addr.state);
+  setVal('edit-pincode', addr.pincode);
+
+  document.getElementById('edit-class').value = classId;
+  populateSectionSelect('edit-section', classId, sectionId);
+  setVal('edit-roll', ac.rollNumber);
+  setVal('edit-admission', toDateInput(ac.admissionDate));
+
+  setVal('edit-father', g.fatherName);
+  setVal('edit-mother', g.motherName);
+  setVal('edit-guardian', g.guardianName);
+  setVal('edit-relation', g.relation);
+  setVal('edit-gphone', g.phone);
+  setVal('edit-gemail', g.email);
+
+  document.getElementById('edit-status').value = s.status || 'Active';
+  openModal('edit');
+}
+async function saveEdit() {
+  if (!editId) return;
+  const payload = buildPayload('edit');
+  if (!validatePayload(payload)) {
+    showToast('Please fill in all required fields (name, class, section).', true);
+    return;
+  }
+  setLoading('btn-save-edit', true);
+  try {
+    const res  = await fetch(`${API_BASE}/students/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    closeModal('edit');
+    await fetchStudents();
+    showToast('Student updated successfully!');
+  } catch (err) {
+    showToast(err.message || 'Failed to update student.', true);
+  } finally {
+    setLoading('btn-save-edit', false, '<i class="ti ti-check"></i>Update Student');
+  }
+}
+// ── Delete student ────────────────────────────────────────────────────────────
+function openDelete(id, name) {
+  deleteId = id;
+  document.getElementById('del-name').textContent = name;
+  openModal('delete');
+}
+async function confirmDelete() {
+  if (!deleteId) return;
+  setLoading('btn-confirm-delete', true);
+  try {
+    const res  = await fetch(`${API_BASE}/students/${deleteId}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    closeModal('delete');
+    await fetchStudents();
+    showToast('Student deleted successfully!');
+  } catch (err) {
+    showToast(err.message || 'Failed to delete student.', true);
+  } finally {
+    setLoading('btn-confirm-delete', false, 'Yes, Delete');
+    deleteId = null;
+  }
+}
+// ── View student ──────────────────────────────────────────────────────────────
+function viewStudent(id) {
+  const s = students.find(x => x._id === id);
+  if (!s) return;
+  const p = s.personal || {}, idf = s.identification || {}, c = s.contact || {}, addr = c.address || {};
+  const ac = s.academic || {}, g = s.guardian || {};
+  const addrLine = [addr.house, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || '—';
+
+  document.getElementById('view-body').innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
+        ${avatarHtml(s, 52)}
+        <div>
+          <div style="font-size:17px;font-weight:500;color:#111827">${fullName(s)}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px">${s.registrationNumber || '—'}</div>
+          <span class="badge ${badgeClass(s.status)}" style="margin-top:6px;display:inline-flex">${s.status || '—'}</span>
+        </div>
+      </div>
+
+      <div class="view-section-title">Personal</div>
+      <table class="view-table">
+        <tr><td><i class="ti ti-gender-bigender"></i>Gender</td><td>${p.gender || '—'}</td></tr>
+        <tr><td><i class="ti ti-cake"></i>Date of Birth</td><td>${fmtDate(p.dob)}</td></tr>
+        <tr><td><i class="ti ti-droplet"></i>Blood Group</td><td>${p.bloodGroup || '—'}</td></tr>
+        <tr><td><i class="ti ti-id"></i>APAAR ID</td><td>${p.APAARid || '—'}</td></tr>
+      </table>
+
+      <div class="view-section-title">Identification</div>
+      <table class="view-table">
+        <tr><td><i class="ti ti-id-badge-2"></i>Aadhaar Number</td><td>${idf.aadhaarNumber || '—'}</td></tr>
+        <tr><td><i class="ti ti-id"></i>APAAR ID</td><td>${idf.apaarId || '—'}</td></tr>
+      </table>
+
+      <div class="view-section-title">Contact</div>
+      <table class="view-table">
+        <tr><td><i class="ti ti-mail"></i>Email</td><td>${c.email || '—'}</td></tr>
+        <tr><td><i class="ti ti-phone"></i>Phone</td><td>${c.phone || '—'}</td></tr>
+        <tr><td><i class="ti ti-map-pin"></i>Address</td><td>${addrLine}</td></tr>
+      </table>
+
+      <div class="view-section-title">Academic</div>
+      <table class="view-table">
+        <tr><td><i class="ti ti-books"></i>Class & Section</td><td>${classSectionDisplay(s)}</td></tr>
+        <tr><td><i class="ti ti-list-numbers"></i>Roll Number</td><td>${ac.rollNumber ?? '—'}</td></tr>
+        <tr><td><i class="ti ti-calendar"></i>Admission Date</td><td>${fmtDate(ac.admissionDate)}</td></tr>
+      </table>
+
+      <div class="view-section-title">Guardian</div>
+      <table class="view-table">
+        <tr><td><i class="ti ti-man"></i>Father's Name</td><td>${g.fatherName || '—'}</td></tr>
+        <tr><td><i class="ti ti-woman"></i>Mother's Name</td><td>${g.motherName || '—'}</td></tr>
+        <tr><td><i class="ti ti-users"></i>Guardian Name</td><td>${g.guardianName || '—'} ${g.relation ? `(${g.relation})` : ''}</td></tr>
+        <tr><td><i class="ti ti-phone"></i>Guardian Contact</td><td>${g.phone || '—'}${g.email ? ' · ' + g.email : ''}</td></tr>
+      </table>`;
+  openModal('view');
+}
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+document.getElementById('add-class').addEventListener('change', e => populateSectionSelect('add-section', e.target.value));
+document.getElementById('edit-class').addEventListener('change', e => populateSectionSelect('edit-section', e.target.value));
+// Spin animation for loader
+const style = document.createElement('style');
+style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+
+(async function init() {
+  await fetchMeta();
+  await fetchStudents();
+})();
+</script>
+</body>
+</html>
