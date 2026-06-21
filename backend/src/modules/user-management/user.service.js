@@ -4,7 +4,7 @@ import { roleFactory } from "./user.factory";
 
 export const createUserService = async (data)=>{
                 const loginId = data.loginId ;
-                const isExisting = await User.findOne(loginId) ;
+                const isExisting = await User.findOne({loginId}) ;
                 
                 if( isExisting )throw new Error("User already exists ") ;
 
@@ -13,7 +13,7 @@ export const createUserService = async (data)=>{
                 const user = await User.create({
                                     loginId , 
                                     password : hashedPassword ,
-                                    role ,
+                                    role:data.role ,
                                     isActive : true
                 }) ;
 
@@ -23,5 +23,6 @@ export const createUserService = async (data)=>{
                        id : user._id ,
                        loginId : user.loginId ,
                        role : user.role
-              }   ;
+              } ;
 } ;
+
