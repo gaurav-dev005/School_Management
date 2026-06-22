@@ -2,11 +2,18 @@ const mongoose = require('mongoose') ;
 const { Schema , ObjectId  } = mongoose ;  
 
 const studentSchema = new Schema({
+        userId: {
+               type: ObjectId,
+               ref: "User"
+               } ,
+               
         registrationNumber : {
                  type : String ,
                  unique : true ,
                  required : true 
         } ,
+       
+        
         personal : {
                      firstName : String ,
                      lastName  : String ,
