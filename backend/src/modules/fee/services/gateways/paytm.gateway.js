@@ -1,8 +1,12 @@
 import https from "https";
 import PaytmChecksum from "paytmchecksum";
 
+const getEnv = (key) => {
+  return process.env[key]?.trim();
+};
+
 const getPaytmHost = () => {
-  return process.env.PAYTM_ENV === "production"
+  return getEnv("PAYTM_ENV") === "production"
     ? "securegw.paytm.in"
     : "securegw-stage.paytm.in";
 };
@@ -33,6 +37,7 @@ const callPaytmApi = (path, requestBody) => {
         try {
           resolve(JSON.parse(responseData));
         } catch (err) {
+          console.log("RAW PAYTM RESPONSE:", responseData);
           reject(new Error("Invalid JSON response from Paytm"));
         }
       });
@@ -82,21 +87,53 @@ const normalizePaytmPaymentMode = (mode) => {
   return "Unknown";
 };
 
+const validatePaytmEnv = () => {
+ const requiredKeys = [
+  "PAYTM_ENV",
+  "PAYTM_MID",
+  "PAYTM_MERCHANT_KEY",
+  "PAYTM_WEBSITE",
+  "PAYTM_CALLBACK_BASE_URL"
+];
+
+  for (const key of requiredKeys) {
+    if (!getEnv(key)) {
+      throw new Error(`${key} is missing in .env`);
+    }
+  }
+};
+
 const paytmGateway = {
   createOrder: async (order) => {
+    validatePaytmEnv();
+
+    const mid = getEnv("PAYTM_MID");
+    const merchantKey = getEnv("PAYTM_MERCHANT_KEY");
+    const websiteName = getEnv("PAYTM_WEBSITE");
+    const callbackUrl = `${getEnv("PAYTM_CALLBACK_BASE_URL")}${order.orderId}`;
+
+    const amount = Number(order.amount).toFixed(2);
+
+    console.log("PAYTM CONFIG CHECK:", {
+      env: getEnv("PAYTM_ENV"),
+      midExists: !!mid,
+      keyExists: !!merchantKey,
+      websiteName,
+      callbackUrl,
+      amount
+    });
+
     const body = {
       requestType: "Payment",
 
-      mid: process.env.PAYTM_MID,
-      websiteName: process.env.PAYTM_WEBSITE,
-      industryTypeId: process.env.PAYTM_INDUSTRY_TYPE,
-      channelId: process.env.PAYTM_CHANNEL_ID,
+      mid,
+      websiteName,
 
       orderId: order.orderId,
-      callbackUrl: process.env.PAYTM_CALLBACK_URL,
+      callbackUrl,
 
       txnAmount: {
-        value: String(order.amount),
+        value: amount,
         currency: order.currency || "INR"
       },
 
@@ -107,7 +144,7 @@ const paytmGateway = {
 
     const signature = await PaytmChecksum.generateSignature(
       JSON.stringify(body),
-      process.env.PAYTM_MERCHANT_KEY
+      merchantKey
     );
 
     const requestBody = {
@@ -118,11 +155,14 @@ const paytmGateway = {
     };
 
     const response = await callPaytmApi(
-      `/theia/api/v1/initiateTransaction?mid=${process.env.PAYTM_MID}&orderId=${order.orderId}`,
+      `/theia/api/v1/initiateTransaction?mid=${mid}&orderId=${order.orderId}`,
       requestBody
     );
 
     if (response.body?.resultInfo?.resultStatus !== "S") {
+      console.log("PAYTM INIT FULL RESPONSE:");
+      console.log(JSON.stringify(response, null, 2));
+
       throw new Error(
         response.body?.resultInfo?.resultMsg ||
           "Paytm initiate transaction failed"
@@ -139,7 +179,7 @@ const paytmGateway = {
       currency: order.currency || "INR",
 
       checkoutData: {
-        mid: process.env.PAYTM_MID,
+        mid,
         orderId: order.orderId,
         amount: order.amount,
         currency: order.currency || "INR",
@@ -151,14 +191,19 @@ const paytmGateway = {
   },
 
   verifyPayment: async ({ order, gatewayPayload }) => {
+    validatePaytmEnv();
+
+    const mid = getEnv("PAYTM_MID");
+    const merchantKey = getEnv("PAYTM_MERCHANT_KEY");
+
     const body = {
-      mid: process.env.PAYTM_MID,
+      mid,
       orderId: order.orderId
     };
 
     const signature = await PaytmChecksum.generateSignature(
       JSON.stringify(body),
-      process.env.PAYTM_MERCHANT_KEY
+      merchantKey
     );
 
     const requestBody = {

@@ -4,8 +4,9 @@ import FeePaymentOrder from "../models/feePaymentOrder.model.js";
 import { calculatePayableFees, payStudentFees } from "./payment.service.js";
 import { getPaymentGateway } from "./paymentGateway.service.js";
 
+
 const generateOrderId = () => {
-  return `FEE_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+  return `FEE${Date.now()}${crypto.randomBytes(4).toString("hex")}`;
 };
 
 const generateIdempotencyKey = (userId, paymentData) => {
@@ -14,7 +15,7 @@ const generateIdempotencyKey = (userId, paymentData) => {
     toMonth: paymentData.toMonth,
     toYear: paymentData.toYear,
     additionalFeeIds: paymentData.additionalFeeIds || [],
-    gateway: paymentData.gateway
+    gateway: paymentData.gateway || "paytm"
   });
 
   return crypto.createHash("sha256").update(raw).digest("hex");
@@ -25,7 +26,7 @@ export const createPaymentOrder = async (
   userId,
   paymentData
 ) => {
-  const { gateway } = paymentData;
+  const gateway = paymentData.gateway || "paytm";
 
   const payable = await calculatePayableFees(studentId, paymentData);
 

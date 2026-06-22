@@ -1,7 +1,9 @@
 import paytmGateway from "./gateways/paytm.gateway.js";
+import phonepeGateway from "./gateways/phonepe.gateway.js";
 
 const gateways = {
-  paytm: paytmGateway
+  paytm: paytmGateway,
+  phonepe: phonepeGateway
 };
 
 export const getPaymentGateway = (gatewayName) => {

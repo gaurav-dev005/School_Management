@@ -18,7 +18,7 @@ export const createPaymentOrderSchema = Joi.object({
     .default([]),
 
   gateway: Joi.string()
-    .valid("paytm", "razorpay", "cashfree")
+    .valid("paytm", "razorpay", "cashfree","phonepe")
     .required()
 })
   .custom((value, helpers) => {

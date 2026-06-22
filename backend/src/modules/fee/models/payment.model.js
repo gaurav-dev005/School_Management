@@ -22,7 +22,7 @@ const paymentSchema = new mongoose.Schema(
 
 paymentGateway: {
   type: String,
-  enum: ["paytm", "razorpay", "cashfree", "offline"],
+  enum: ["paytm", "razorpay", "cashfree", "offline","phonepe"],
   required: true
 },
 

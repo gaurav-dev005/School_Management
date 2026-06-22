@@ -45,7 +45,7 @@ const feePaymentOrderSchema = new mongoose.Schema(
 
     gateway: {
       type: String,
-      enum: ["paytm", "razorpay", "cashfree"],
+      enum: ["paytm", "razorpay", "cashfree" , "phonepe"],
       required: true
     },
 
