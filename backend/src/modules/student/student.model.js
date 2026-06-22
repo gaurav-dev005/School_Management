@@ -1,5 +1,6 @@
-const mongoose = require('mongoose') ;
-const { Schema , ObjectId  } = mongoose ;  
+import mongoose from "mongoose";
+const { Schema } = mongoose;
+const ObjectId = Schema.Types.ObjectId;
 
 const studentSchema = new Schema({
         userId: {
@@ -23,8 +24,8 @@ const studentSchema = new Schema({
                      } ,
                      dob : Date ,
                      bloodGroup : String ,
-                     photo : String ,
-                     APAARid:String ,
+                     photo : String 
+                    
                      
 
                    } ,

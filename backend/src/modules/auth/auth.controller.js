@@ -8,18 +8,23 @@ export const login = async (req , res)=>{
           try{
                     const { loginId , password } = req.body ;
 
-                    const result = await loginUser({ loginId , password }) ;
+                    const result = await loginUser( loginId , password ) ;
                   
 
                         res.status(200).json({
+                                 success : true ,
                                  message : "Login Succesful " ,
-                                ...result
+                                ...result 
+                                
                         }) ;
           }
-          catch(error){
-                    res.status(500).json({
-                           message :" in autokay lets do nextServer Error"
-                    }) ;
+          catch(err){
+                     console.log("LOGIN ERROR:", err);
+
+  return res.status(500).json({
+    success: false,
+    message: err.message
+  });
 
           }
 }

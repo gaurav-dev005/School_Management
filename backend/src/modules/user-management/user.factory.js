@@ -1,13 +1,10 @@
 import { createStudent } from "../student/student.service.js"
 // import { createTeacher } from "../teacher/teacher.service.js"
 
-export const roleFactory = async ( role , data , user )=>{
-                            
-                            if( role == "student" ){
-                                    return createStudent( data , user ) ;
-                            }
+export const roleFactory = async (role, data, user, session) => {
+  if (role === "student") {
+    return await createStudent(data, user, session);
+  }
 
-                            if( role == "teacher "){}
-               throw new Error("Invalid role ") ;             
-
-}
+  throw new Error("Invalid role");
+};

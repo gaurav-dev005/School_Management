@@ -1,28 +1,52 @@
-import User from "../../models/user.model";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { roleFactory } from "./user.factory";
 
-export const createUserService = async (data)=>{
-                const loginId = data.loginId ;
-                const isExisting = await User.findOne({loginId}) ;
-                
-                if( isExisting )throw new Error("User already exists ") ;
+import User from "../../models/user.model.js";
+import { roleFactory } from "./user.factory.js";
 
-                const hashedPassword = await bcrypt.hash( data.password , 10 ) ;
+export const createUserService = async (data) => {
+  const session = await mongoose.startSession();
 
-                const user = await User.create({
-                                    loginId , 
-                                    password : hashedPassword ,
-                                    role:data.role ,
-                                    isActive : true
-                }) ;
+  try {
+    session.startTransaction();
 
-                await roleFactory( data.role , data , user ) ;
+    const loginId = data.loginId;
 
-              return {
-                       id : user._id ,
-                       loginId : user.loginId ,
-                       role : user.role
-              } ;
-} ;
+    const isExisting = await User.findOne({ loginId }).session(session);
 
+    if (isExisting) {
+      throw new Error("User already exists");
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    const [user] = await User.create(
+      [
+        {
+          loginId,
+          password: hashedPassword,
+          role: data.role,
+          isActive: true
+        }
+      ],
+      { session }
+    );
+
+    await roleFactory(data.role, data, user, session);
+
+    await session.commitTransaction();
+
+    return {
+      id: user._id,
+      loginId: user.loginId,
+      role: user.role
+    };
+
+  } catch (err) {
+    await session.abortTransaction();
+    throw new Error(err.message);
+
+  } finally {
+    await session.endSession();
+  }
+};

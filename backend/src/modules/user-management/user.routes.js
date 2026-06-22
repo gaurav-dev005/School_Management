@@ -1,15 +1,50 @@
 import express from "express";
-import { protect } from "../../middleware/auth.middlware";
-import { authorizeRoles } from "../../middleware/role.middleware";
-import { createEntity , getAllEntities , deleteEntity } from "./user.controller";
-import { protect } from "../../middleware/auth.middlware";
-import { authorizeRoles } from "../../middleware/role.middleware";
+import { protect } from "../../middlewares/auth.middlware.js";
+import { authorizeRoles } from "../../middlewares/role.middleware.js";
 
-const router = express.Router() ;
+import {
+  createEntity,
+  getAllEntities,
+  getEntityById,
+  updateEntity,
+  deleteEntity
+} from "./user.controller.js";
 
-router.post("/createUser" , protect , authorizeRoles("superadmin" , "admin") , createEntity ) ; 
-router.get("/user" , protect , authorizeRoles("superadmin" , "admin") , getAllEntities ) ; 
-router.delete("user/:id" , protect , authorizeRoles("admin" , "superadmin") , deleteEntity ) ;
+const router = express.Router();
 
+router.post(
+  "/users",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  createEntity
+);
 
+router.get(
+  "/users",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  getAllEntities
+);
 
+router.get(
+  "/users/:id",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  getEntityById
+);
+
+router.put(
+  "/users/:id",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  updateEntity
+);
+
+router.delete(
+  "/users/:id",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  deleteEntity
+);
+
+export default router;

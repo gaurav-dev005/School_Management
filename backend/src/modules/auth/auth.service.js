@@ -1,6 +1,7 @@
 import User from "../../models/user.model.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "./auth.utils.js";
+import jwt from "jsonwebtoken" ;
 
 export const loginUser = async (loginId, password) => {
 
