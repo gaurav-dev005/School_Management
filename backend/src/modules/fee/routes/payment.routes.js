@@ -9,7 +9,10 @@ import {
   createStudentPaymentOrder,
   verifyStudentPaymentOrder,
   paytmPaymentCallback ,
-  phonepeCallback
+  phonepeCallback , 
+  getMyReceipts,
+  getMyReceiptById ,
+  downloadMyReceiptPdf
 } from "../controllers/payment.controller.js";
 
 import {
@@ -18,6 +21,7 @@ import {
 } from "../validators/payment.validator.js";
 
 const router = express.Router();
+
 
 router.post(
   "/me/create-order",
@@ -46,3 +50,28 @@ router.post(
 router.post("/callback/phonepe" , phonepeCallback ) ;
 
 export default router;
+
+
+
+// receipts routes 
+
+router.get(
+  "/me/receipts",
+  protect,
+  getMyReceipts
+);
+
+router.get(
+  "/me/receipts/:paymentId/pdf",
+  protect,
+  downloadMyReceiptPdf
+);
+
+router.get(
+  "/me/receipts/:paymentId",
+  protect,
+  getMyReceiptById
+);
+
+
+
