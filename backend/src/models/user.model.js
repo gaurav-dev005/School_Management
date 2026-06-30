@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
 
            role : {
                     type : String , 
-                    enum : ["student" , "superAdmin" , "admin" , "teacher" ] ,
+                    enum : ["student" , "superadmin" , "admin" , "teacher" ] ,
                  } ,
             isActive : {
                      type : Boolean ,

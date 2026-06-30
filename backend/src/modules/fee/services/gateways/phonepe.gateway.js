@@ -111,13 +111,13 @@ const normalizePhonePePaymentMode = (paymentDetails = []) => {
 };
 
 const phonepeGateway = {
-  createOrder: async (order) => {
+  createOrder: async (attempt) => {
     validatePhonePeEnv();
 
     const accessToken = await getPhonePeAuthToken();
 
-    const merchantOrderId = order.orderId;
-    const amountInPaise = Math.round(Number(order.amount) * 100);
+    const merchantOrderId = attempt.orderId;
+    const amountInPaise = Math.round(Number(attempt.amount) * 100);
 
     const body = {
       merchantOrderId,
@@ -126,7 +126,8 @@ const phonepeGateway = {
 
       metaInfo: {
         udf1: "school_fee_payment",
-        udf2: String(order.user)
+        udf2: String(attempt.user),
+        udf3: String(attempt.paymentOrder)
       },
 
       paymentFlow: {
@@ -157,14 +158,14 @@ const phonepeGateway = {
     return {
       gateway: "phonepe",
 
-      orderId: order.orderId,
+      orderId: attempt.orderId,
       gatewayOrderId: response.data.orderId,
 
-      amount: order.amount,
-      currency: order.currency || "INR",
+      amount: attempt.amount,
+      currency: attempt.currency || "INR",
 
       checkoutData: {
-        merchantOrderId: order.orderId,
+        merchantOrderId: attempt.orderId,
         phonepeOrderId: response.data.orderId,
         state: response.data.state,
         redirectUrl: response.data.redirectUrl,
@@ -175,13 +176,13 @@ const phonepeGateway = {
     };
   },
 
-  verifyPayment: async ({ order, gatewayPayload }) => {
+  verifyPayment: async ({ attempt, gatewayPayload }) => {
     validatePhonePeEnv();
 
     const accessToken = await getPhonePeAuthToken();
 
     const response = await callPhonePeApi({
-      path: `/apis/pg-sandbox/checkout/v2/order/${order.orderId}/status`,
+      path: `/apis/pg-sandbox/checkout/v2/order/${attempt.orderId}/status`,
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -195,8 +196,8 @@ const phonepeGateway = {
 
       return {
         success: false,
-        orderId: order.orderId,
-        amount: order.amount,
+        orderId: attempt.orderId,
+        amount: attempt.amount,
         gatewayPaymentId: null,
         paymentMode: "Unknown",
         rawResponse: {
@@ -211,8 +212,8 @@ const phonepeGateway = {
     if (state !== "COMPLETED") {
       return {
         success: false,
-        orderId: order.orderId,
-        amount: order.amount,
+        orderId: attempt.orderId,
+        amount: attempt.amount,
         gatewayPaymentId: response.data?.orderId,
         paymentMode: normalizePhonePePaymentMode(response.data?.paymentDetails),
         rawResponse: {
@@ -225,8 +226,8 @@ const phonepeGateway = {
     return {
       success: true,
 
-      orderId: order.orderId,
-      amount: Number(order.amount),
+      orderId: attempt.orderId,
+      amount: Number(attempt.amount),
 
       gatewayPaymentId:
         response.data?.paymentDetails?.[0]?.transactionId ||

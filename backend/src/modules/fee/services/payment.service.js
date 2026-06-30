@@ -46,6 +46,14 @@ export const calculatePayableFees = async (
     additionalFeeIds = []
   } = paymentData;
 
+  const uniqueAdditionalFeeIds = [
+    ...new Set(additionalFeeIds.map(String))
+  ];
+
+  if (uniqueAdditionalFeeIds.length !== additionalFeeIds.length) {
+    throw new Error("Duplicate additional fee selected");
+  }
+
   const feeRecordQuery = StudentFee.findOne({ student: studentId });
 
   if (session) {
@@ -56,63 +64,6 @@ export const calculatePayableFees = async (
 
   if (!feeRecord) {
     throw new Error("Student fee record not found");
-  }
-
-  let monthlyPayment = null;
-  let totalMonthlyAmount = 0;
-
-  if (toMonth && toYear) {
-    if (toMonth < 1 || toMonth > 12) {
-      throw new Error("Invalid month");
-    }
-
-    const nextDue = getNextMonth(
-      feeRecord.lastPaidMonth,
-      feeRecord.lastPaidYear
-    );
-
-    const monthsCount = getMonthCount(
-      nextDue.month,
-      nextDue.year,
-      toMonth,
-      toYear
-    );
-
-    if (monthsCount <= 0) {
-      throw new Error("Invalid monthly fee range");
-    }
-
-    const tuitionFee = feeRecord.monthlyFee || 0;
-    const transportFee = feeRecord.transportFee || 0;
-
-    const perMonthTotal = tuitionFee + transportFee;
-    totalMonthlyAmount = perMonthTotal * monthsCount;
-
-    monthlyPayment = {
-      fromMonth: nextDue.month,
-      fromYear: nextDue.year,
-      toMonth,
-      toYear,
-      monthsCount,
-
-      perMonthBreakup: {
-        tuitionFee,
-        transportFee,
-        hostelFee: 0,
-        otherMonthlyFee: 0
-      },
-
-      perMonthTotal,
-      totalMonthlyAmount
-    };
-  }
-
-  const uniqueAdditionalFeeIds = [
-    ...new Set(additionalFeeIds.map(String))
-  ];
-
-  if (uniqueAdditionalFeeIds.length !== additionalFeeIds.length) {
-    throw new Error("Duplicate additional fee selected");
   }
 
   let additionalFeesQuery = AdditionalFee.find({
@@ -135,6 +86,60 @@ export const calculatePayableFees = async (
     (sum, fee) => sum + fee.amount,
     0
   );
+
+  let monthlyPayment = null;
+  let totalMonthlyAmount = 0;
+
+  if (toMonth && toYear) {
+    if (toMonth < 1 || toMonth > 12) {
+      throw new Error("Invalid month");
+    }
+
+    const nextDue = getNextMonth(
+      feeRecord.lastPaidMonth,
+      feeRecord.lastPaidYear
+    );
+
+    const monthsCount = getMonthCount(
+      nextDue.month,
+      nextDue.year,
+      toMonth,
+      toYear
+    );
+
+    if (monthsCount <= 0) {
+      if (totalAdditionalAmount <= 0) {
+        throw new Error("Invalid monthly fee range");
+      }
+
+      monthlyPayment = null;
+      totalMonthlyAmount = 0;
+    } else {
+      const tuitionFee = feeRecord.monthlyFee || 0;
+      const transportFee = feeRecord.transportFee || 0;
+
+      const perMonthTotal = tuitionFee + transportFee;
+      totalMonthlyAmount = perMonthTotal * monthsCount;
+
+      monthlyPayment = {
+        fromMonth: nextDue.month,
+        fromYear: nextDue.year,
+        toMonth,
+        toYear,
+        monthsCount,
+
+        perMonthBreakup: {
+          tuitionFee,
+          transportFee,
+          hostelFee: 0,
+          otherMonthlyFee: 0
+        },
+
+        perMonthTotal,
+        totalMonthlyAmount
+      };
+    }
+  }
 
   const totalAmount = totalMonthlyAmount + totalAdditionalAmount;
 

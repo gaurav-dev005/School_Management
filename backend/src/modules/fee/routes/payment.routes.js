@@ -8,7 +8,8 @@ validate
 import {
   createStudentPaymentOrder,
   verifyStudentPaymentOrder,
-  paytmPaymentCallback
+  paytmPaymentCallback ,
+  phonepeCallback
 } from "../controllers/payment.controller.js";
 
 import {
@@ -41,5 +42,7 @@ router.post(
   "/callback/paytm",
   paytmPaymentCallback
 );
+
+router.post("/callback/phonepe" , phonepeCallback ) ;
 
 export default router;
