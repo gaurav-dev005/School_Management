@@ -1,6 +1,13 @@
 import { createUserService } from "./user.service.js";
 import * as studentService from "../student/student.service.js";
 // import * as teacherService from "../teacher/teacher.service.js";
+import {
+  getPaymentHistoryByMonth as getPaymentHistoryByMonthService,
+  getPaymentHistoryByStudent as getPaymentHistoryByStudentService,
+  getPaymentHistoryByGrade as getPaymentHistoryByGradeService,
+  getPaymentById as getPaymentByIdService
+} from "./paymentHistory.service.js";
+import { generateReceiptPdf } from "../fee/services/receiptPdf.service.js";
 
 export const createEntity = async (req, res) => {
   try {
@@ -144,6 +151,107 @@ export const deleteEntity = async (req, res) => {
 
   } catch (err) {
     return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+
+
+export const getPaymentHistoryByMonth = async (req, res) => {
+  try {
+    const result = await getPaymentHistoryByMonthService(req.query);
+
+    return res.status(200).json({
+      success: true,
+      ...result
+    });
+
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+export const getPaymentHistoryByStudent = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const result = await getPaymentHistoryByStudentService(
+      studentId,
+      req.query
+    );
+
+    return res.status(200).json({
+      success: true,
+      ...result
+    });
+
+  } catch (err) {
+    if (err.message === "Student not found") {
+      return res.status(404).json({
+        success: false,
+        message: err.message
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+export const getPaymentHistoryByGrade = async (req, res) => {
+  try {
+    const { gradeId } = req.params;
+
+    const result = await getPaymentHistoryByGradeService(
+      gradeId,
+      req.query
+    );
+
+    return res.status(200).json({
+      success: true,
+      ...result
+    });
+
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+export const downloadReceiptPdf = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    const payment = await getPaymentByIdService(paymentId);
+
+    const pdfBuffer = await generateReceiptPdf({ payment });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=receipt-${payment.receiptNumber}.pdf`
+    );
+
+    return res.send(pdfBuffer);
+
+  } catch (err) {
+    if (err.message === "Payment not found") {
+      return res.status(404).json({
+        success: false,
+        message: err.message
+      });
+    }
+
+    return res.status(400).json({
       success: false,
       message: err.message
     });

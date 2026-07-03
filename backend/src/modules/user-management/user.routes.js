@@ -7,7 +7,11 @@ import {
   getAllEntities,
   getEntityById,
   updateEntity,
-  deleteEntity
+  deleteEntity,
+  getPaymentHistoryByMonth,
+  getPaymentHistoryByStudent,
+  getPaymentHistoryByGrade,
+  downloadReceiptPdf
 } from "./user.controller.js";
 
 const router = express.Router();
@@ -45,6 +49,34 @@ router.delete(
   protect,
   authorizeRoles("superadmin", "admin"),
   deleteEntity
+);
+
+router.get(
+  "/payments/history/monthly",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  getPaymentHistoryByMonth
+);
+
+router.get(
+  "/payments/history/student/:studentId",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  getPaymentHistoryByStudent
+);
+
+router.get(
+  "/payments/history/grade/:gradeId",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  getPaymentHistoryByGrade
+);
+
+router.get(
+  "/payments/:paymentId/receipt/pdf",
+  protect,
+  authorizeRoles("superadmin", "admin"),
+  downloadReceiptPdf
 );
 
 export default router;

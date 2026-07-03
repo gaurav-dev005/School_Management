@@ -1,16 +1,36 @@
 import PDFDocument from "pdfkit";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Matches the "Fee_Receipt_A5" template dimensions exactly (A5 @ 72dpi)
+const PAGE_WIDTH = 419.5;
+const PAGE_HEIGHT = 595.25;
 
 const COLORS = {
-  paper: "#efe1b6",
-  ink: "#315d6b",
-  lightInk: "#6f8790"
+  navy: "#16325c",
+  navyDark: "#0f2545",
+  ink: "#1a1a1a",
+  headerText: "#ffffff",
+  totalRowFill: "#eaeef5"
 };
 
-const SCHOOL_NAME = "VEENA SHIKSHAN SANSTHAN";
-const SCHOOL_NAME_HINDI = "वीणा शिक्षण संस्थान";
+const SCHOOL_NAME = process.env.SCHOOL_NAME || "GYANAM PUBLIC SCHOOL";
+const SCHOOL_ADDRESS = (
+  process.env.SCHOOL_ADDRESS ||
+  "Karuaini Chowk, District - East Champaran, Bihar - 845435"
+).toUpperCase();
+const SCHOOL_PHONE = process.env.SCHOOL_PHONE || "Mob. No.: 7033142403";
+// Optional: absolute path (or Buffer) to the school's actual logo image.
+// Defaults to the bundled asset extracted from the provided template;
+// override with SCHOOL_LOGO_PATH (or the `school.logo` option) for a
+// different school/logo. Falls back to a placeholder monogram if missing.
+const DEFAULT_LOGO_PATH = path.join(__dirname, "../../../assets/school-logo.jpg");
+const SCHOOL_LOGO_PATH = process.env.SCHOOL_LOGO_PATH || DEFAULT_LOGO_PATH;
 
 const DISCLAIMER_TEXT =
-  "Note: Paying monthly tuition fee after the 15th of the month may attract late fee as per school rules. Fee once paid will not be refundable.";
+  "Note: The monthly tuition fee is to be paid on or between 1st and 15th of the month. Failing which a late fine of Rs. 10/- per day will be charged extra per month. Fee once paid will not be refundable.";
 
 const monthNames = [
   "",
@@ -62,18 +82,10 @@ const hasMonthlyPayment = (monthlyPayment) => {
 
 const getMonthDisplay = (monthlyPayment) => {
   if (!hasMonthlyPayment(monthlyPayment)) {
-    return {
-      monthText: "",
-      yearText: ""
-    };
+    return { monthText: "", yearText: "" };
   }
 
-  const {
-    fromMonth,
-    fromYear,
-    toMonth,
-    toYear
-  } = monthlyPayment;
+  const { fromMonth, fromYear, toMonth, toYear } = monthlyPayment;
 
   if (fromYear === toYear) {
     if (fromMonth === toMonth) {
@@ -93,41 +105,6 @@ const getMonthDisplay = (monthlyPayment) => {
     monthText: `${monthNames[fromMonth]} ${fromYear} - ${monthNames[toMonth]} ${toYear}`,
     yearText: ""
   };
-};
-
-const drawText = (doc, text, x, y, options = {}) => {
-  const {
-    size = 9,
-    bold = false,
-    width,
-    align = "left"
-  } = options;
-
-  doc
-    .fillColor(COLORS.ink)
-    .font(bold ? "Helvetica-Bold" : "Helvetica")
-    .fontSize(size)
-    .text(text || "", x, y, {
-      width,
-      align
-    });
-};
-
-const drawLine = (doc, x1, y1, x2, y2, width = 1) => {
-  doc
-    .strokeColor(COLORS.ink)
-    .lineWidth(width)
-    .moveTo(x1, y1)
-    .lineTo(x2, y2)
-    .stroke();
-};
-
-const drawRect = (doc, x, y, w, h, width = 1) => {
-  doc
-    .strokeColor(COLORS.ink)
-    .lineWidth(width)
-    .rect(x, y, w, h)
-    .stroke();
 };
 
 const getAmountMap = (payment) => {
@@ -165,29 +142,137 @@ const getAmountMap = (payment) => {
 };
 
 const getFeeAmount = (amountMap, label) => {
-  return amountMap[label] || "";
+  return amountMap[label] ?? "";
 };
 
-const drawFieldLine = (doc, label, value, x, y, labelWidth, lineWidth) => {
-  drawText(doc, label, x, y, {
-    size: 8.5,
-    bold: true
-  });
+// ---------------------------------------------------------------------------
+// Indian-numbering-system number-to-words, for the "In Words" line.
+// ---------------------------------------------------------------------------
 
-  const valueX = x + labelWidth;
-  drawText(doc, value, valueX, y, {
-    size: 8.5,
-    width: lineWidth - 5
-  });
+const ONES = [
+  "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+  "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+  "Seventeen", "Eighteen", "Nineteen"
+];
 
-  drawLine(doc, valueX, y + 11, valueX + lineWidth, y + 11, 0.5);
+const TENS = [
+  "", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"
+];
+
+const twoDigitsToWords = (num) => {
+  if (num < 20) return ONES[num];
+
+  const tens = Math.floor(num / 10);
+  const rest = num % 10;
+
+  return `${TENS[tens]}${rest ? " " + ONES[rest] : ""}`;
 };
 
-export const generateReceiptPdf = ({ payment }) => {
+const threeDigitsToWords = (num) => {
+  const hundreds = Math.floor(num / 100);
+  const rest = num % 100;
+
+  const parts = [];
+
+  if (hundreds) {
+    parts.push(`${ONES[hundreds]} Hundred`);
+  }
+
+  if (rest) {
+    parts.push(twoDigitsToWords(rest));
+  }
+
+  return parts.join(" ");
+};
+
+const numberToWordsIndian = (num) => {
+  if (num === 0) return "Zero";
+
+  const crore = Math.floor(num / 10000000);
+  num %= 10000000;
+
+  const lakh = Math.floor(num / 100000);
+  num %= 100000;
+
+  const thousand = Math.floor(num / 1000);
+  num %= 1000;
+
+  const hundred = num;
+
+  const parts = [];
+
+  if (crore) parts.push(`${threeDigitsToWords(crore)} Crore`);
+  if (lakh) parts.push(`${threeDigitsToWords(lakh)} Lakh`);
+  if (thousand) parts.push(`${threeDigitsToWords(thousand)} Thousand`);
+  if (hundred) parts.push(threeDigitsToWords(hundred));
+
+  return parts.join(" ");
+};
+
+const amountInWords = (amount) => {
+  const value = Number(amount) || 0;
+
+  if (value <= 0) return "";
+
+  const rupees = Math.floor(value);
+  const paise = Math.round((value - rupees) * 100);
+
+  let words = `Rupees ${numberToWordsIndian(rupees)} Only`;
+
+  if (paise > 0) {
+    words = `Rupees ${numberToWordsIndian(rupees)} and Paise ${numberToWordsIndian(paise)} Only`;
+  }
+
+  return words;
+};
+
+// ---------------------------------------------------------------------------
+// Drawing helpers
+// ---------------------------------------------------------------------------
+
+const drawLogo = (doc, { x, y, size, logoSource, schoolName }) => {
+  if (logoSource) {
+    try {
+      doc.image(logoSource, x, y, { width: size, height: size });
+      return;
+    } catch (err) {
+      // fall through to placeholder if the image fails to load
+    }
+  }
+
+  const initials = schoolName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .slice(0, 3)
+    .join("");
+
+  doc.save();
+  doc
+    .circle(x + size / 2, y + size / 2, size / 2)
+    .lineWidth(1.3)
+    .strokeColor(COLORS.navy)
+    .stroke();
+
+  doc
+    .fillColor(COLORS.navy)
+    .font("Helvetica-Bold")
+    .fontSize(size * 0.28)
+    .text(initials, x, y + size / 2 - size * 0.16, {
+      width: size,
+      align: "center"
+    });
+  doc.restore();
+};
+
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+
+export const generateReceiptPdf = ({ payment, school = {} }) => {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
-      size: "A4",
-      layout: "landscape",
+      size: [PAGE_WIDTH, PAGE_HEIGHT],
       margin: 0
     });
 
@@ -197,8 +282,10 @@ export const generateReceiptPdf = ({ payment }) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const pageW = doc.page.width;
-    const pageH = doc.page.height;
+    const schoolName = school.name || SCHOOL_NAME;
+    const schoolAddress = (school.address || SCHOOL_ADDRESS).toUpperCase();
+    const schoolPhone = school.phone || SCHOOL_PHONE;
+    const logoSource = school.logo || SCHOOL_LOGO_PATH;
 
     const student = payment.student;
     const studentName = getStudentName(student);
@@ -207,180 +294,129 @@ export const generateReceiptPdf = ({ payment }) => {
     const monthDisplay = getMonthDisplay(payment.monthlyPayment);
     const amountMap = getAmountMap(payment);
 
-    doc.rect(0, 0, pageW, pageH).fill(COLORS.paper);
+    const marginX = 24;
+    const contentW = PAGE_WIDTH - marginX * 2;
 
-    const x = 28;
-    const y = 22;
-    const w = pageW - 56;
-    const h = pageH - 44;
+    // ---------------- Header ----------------
+    const logoSize = 52;
+    const logoX = marginX;
+    const logoY = 20;
 
-    drawRect(doc, x, y, w, h, 1.3);
-    drawRect(doc, x + 4, y + 4, w - 8, h - 8, 0.8);
-
-    // top heading
-    drawText(doc, SCHOOL_NAME, x + w / 2 - 120, y + 10, {
-      size: 14,
-      bold: true,
-      width: 240,
-      align: "center"
+    drawLogo(doc, {
+      x: logoX,
+      y: logoY,
+      size: logoSize,
+      logoSource,
+      schoolName
     });
 
-    drawText(doc, "Dues Slip", x + w - 120, y + 14, {
-      size: 15,
-      bold: true,
-      width: 90,
-      align: "center"
+    const textX = logoX + logoSize + 10;
+    const textW = PAGE_WIDTH - marginX - textX;
+
+    doc
+      .fillColor(COLORS.navy)
+      .font("Helvetica-Bold")
+      .fontSize(17)
+      .text(schoolName, textX, logoY, { width: textW, align: "center" });
+
+    doc
+      .fillColor(COLORS.ink)
+      .font("Helvetica")
+      .fontSize(7.3)
+      .text(schoolAddress, textX, logoY + 23, { width: textW, align: "center" });
+
+    doc
+      .font("Helvetica")
+      .fontSize(7.3)
+      .text(schoolPhone, textX, logoY + 34, { width: textW, align: "center" });
+
+    let y = logoY + logoSize + 8;
+
+    doc
+      .moveTo(marginX, y)
+      .lineTo(PAGE_WIDTH - marginX, y)
+      .lineWidth(1.5)
+      .strokeColor(COLORS.navy)
+      .stroke();
+
+    y += 10;
+
+    doc
+      .fillColor(COLORS.navy)
+      .font("Helvetica-Bold")
+      .fontSize(13)
+      .text("FEE RECEIPT", marginX, y, { width: contentW, align: "center" });
+
+    y += 20;
+
+    // ---------------- Info table (Sl.No/Date, Name/Roll, Father/Reg, Class/Month) ----------------
+    const infoRowH = 17;
+    const infoColW = contentW / 2;
+    const infoLabelW = 74;
+
+    const classDisplay = sectionName ? `${className} - ${sectionName}` : className;
+    const monthYearDisplay = [monthDisplay.monthText, monthDisplay.yearText]
+      .filter(Boolean)
+      .join(" ");
+
+    const infoRows = [
+      [
+        ["Sl. No.", String(payment.receiptNumber || "")],
+        ["Date", formatDate(payment.createdAt)]
+      ],
+      [
+        ["Name of Student", studentName],
+        ["Roll No.", String(student?.academic?.rollNumber ?? "")]
+      ],
+      [
+        ["Father's Name", student?.guardian?.fatherName || ""],
+        ["Reg. No.", student?.registrationNumber || ""]
+      ],
+      [
+        ["Class", classDisplay],
+        ["Month / Year", monthYearDisplay]
+      ]
+    ];
+
+    const infoTableTop = y;
+
+    doc.lineWidth(0.7).strokeColor(COLORS.navy);
+
+    infoRows.forEach((row, i) => {
+      const rowY = infoTableTop + i * infoRowH;
+
+      doc.rect(marginX, rowY, contentW, infoRowH).stroke();
+      doc
+        .moveTo(marginX + infoColW, rowY)
+        .lineTo(marginX + infoColW, rowY + infoRowH)
+        .stroke();
+
+      row.forEach(([label, value], colIdx) => {
+        const cellX = marginX + colIdx * infoColW;
+
+        doc
+          .fillColor(COLORS.ink)
+          .font("Helvetica-Bold")
+          .fontSize(7.8)
+          .text(label, cellX + 5, rowY + 5, { width: infoLabelW });
+
+        doc
+          .font("Helvetica")
+          .fontSize(7.8)
+          .text(value, cellX + infoLabelW + 5, rowY + 5, {
+            width: infoColW - infoLabelW - 10
+          });
+      });
     });
 
-    drawText(doc, "Sl. No.", x + 16, y + 18, {
-      size: 9
-    });
+    y = infoTableTop + infoRows.length * infoRowH + 12;
 
-    drawText(doc, String(payment.receiptNumber || ""), x + 68, y + 16, {
-      size: 16,
-      bold: true
-    });
-
-    drawText(doc, `Date`, x + w - 160, y + 42, {
-      size: 8.5,
-      bold: true
-    });
-    drawText(doc, formatDate(payment.createdAt), x + w - 125, y + 42, {
-      size: 8.5,
-      width: 90
-    });
-    drawLine(doc, x + w - 128, y + 53, x + w - 34, y + 53, 0.5);
-
-    // details area
-    let infoY = y + 58;
-
-    drawFieldLine(doc, "Name of the Student:", studentName, x + 16, infoY, 132, 250);
-    infoY += 20;
-
-    drawFieldLine(
-      doc,
-      "Father's Name:",
-      student?.guardian?.fatherName || "",
-      x + 16,
-      infoY,
-      95,
-      287
-    );
-    infoY += 20;
-
-    drawFieldLine(doc, "Class:", className, x + 16, infoY, 38, 70);
-
-    drawFieldLine(
-      doc,
-      "Roll No. (Reg. No.):",
-      `${student?.academic?.rollNumber || ""} (${student?.registrationNumber || ""})`,
-      x + 170,
-      infoY,
-      110,
-      170
-    );
-    infoY += 20;
-
-    drawFieldLine(
-      doc,
-      "for the Month of:",
-      monthDisplay.monthText,
-      x + 16,
-      infoY,
-      102,
-      170
-    );
-
-    drawFieldLine(
-      doc,
-      "Year:",
-      monthDisplay.yearText,
-      x + 305,
-      infoY,
-      32,
-      72
-    );
-
-    // table sizes
-    const noteX = x + 14;
-    const noteY = y + 146;
-    const noteW = 70;
-    const noteH = 310;
-
-    const tableX = noteX + noteW + 12;
-    const tableY = noteY;
-    const tableW = w - 110;
-    const headerH = 24;
-    const rowH = 18;
-    const particularsCount = 12;
-    const particularsH = particularsCount * rowH;
-    const totalsH = 60;
-    const tableH = headerH + particularsH + totalsH;
-
-    const slW = 42;
-    const particularsW = 360;
-    const amountW = 110;
-    const paiseW = 32;
-
-    drawRect(doc, noteX, noteY, noteW, noteH, 1);
-    drawText(doc, "In Words :-", noteX + 8, noteY + 8, {
-      size: 8.5,
-      bold: true,
-      width: noteW - 16
-    });
-
-    drawText(doc, DISCLAIMER_TEXT, noteX + 8, noteY + 30, {
-      size: 7.2,
-      width: noteW - 16,
-      align: "left"
-    });
-
-    // table
-    drawRect(doc, tableX, tableY, tableW, tableH, 1);
-
-    drawLine(doc, tableX + slW, tableY, tableX + slW, tableY + tableH);
-    drawLine(
-      doc,
-      tableX + slW + particularsW,
-      tableY,
-      tableX + slW + particularsW,
-      tableY + tableH
-    );
-    drawLine(
-      doc,
-      tableX + slW + particularsW + amountW,
-      tableY,
-      tableX + slW + particularsW + amountW,
-      tableY + tableH
-    );
-
-    drawLine(doc, tableX, tableY + headerH, tableX + tableW, tableY + headerH);
-
-    drawText(doc, "Sl.\nNo.", tableX + 7, tableY + 4, {
-      size: 8,
-      bold: true,
-      width: 28,
-      align: "center"
-    });
-
-    drawText(doc, "PARTICULARS", tableX + slW + 120, tableY + 7, {
-      size: 9,
-      bold: true,
-      width: 120,
-      align: "center"
-    });
-
-    drawText(doc, "Amount", tableX + slW + particularsW + 24, tableY + 7, {
-      size: 9,
-      bold: true,
-      width: 60,
-      align: "center"
-    });
-
-    drawText(doc, "P.", tableX + slW + particularsW + amountW + 8, tableY + 7, {
-      size: 9,
-      bold: true
-    });
+    // ---------------- Particulars table ----------------
+    const slW = 26;
+    const amtW = 82;
+    const particularsW = contentW - slW - amtW;
+    const headerH = 20;
+    const rowH = 15.2;
 
     const particulars = [
       "Registration Fee",
@@ -397,111 +433,174 @@ export const generateReceiptPdf = ({ payment }) => {
       "Advance"
     ];
 
-    particulars.forEach((item, index) => {
-      const rowTop = tableY + headerH + index * rowH;
+    const tableTop = y;
+
+    doc.rect(marginX, tableTop, contentW, headerH).fill(COLORS.navy);
+
+    doc
+      .fillColor(COLORS.headerText)
+      .font("Helvetica-Bold")
+      .fontSize(7.5)
+      .text("Sl.\nNo.", marginX, tableTop + 3, { width: slW, align: "center" });
+
+    doc.text("Particulars", marginX + slW, tableTop + 6, {
+      width: particularsW,
+      align: "center"
+    });
+
+    doc.text("Amount (Rs.)", marginX + slW + particularsW, tableTop + 6, {
+      width: amtW,
+      align: "center"
+    });
+
+    let rowTop = tableTop + headerH;
+
+    doc.lineWidth(0.5).strokeColor(COLORS.navy);
+
+    particulars.forEach((item, idx) => {
       const amount = getFeeAmount(amountMap, item);
 
-      drawLine(doc, tableX, rowTop + rowH, tableX + tableW, rowTop + rowH, 0.4);
+      doc.rect(marginX, rowTop, contentW, rowH).stroke();
 
-      drawText(doc, `${index + 1}.`, tableX + 8, rowTop + 4, {
-        size: 8,
-        width: 24,
-        align: "right"
-      });
+      doc
+        .fillColor(COLORS.ink)
+        .font("Helvetica")
+        .fontSize(7.3)
+        .text(String(idx + 1), marginX, rowTop + 3.5, {
+          width: slW,
+          align: "center"
+        });
 
-      drawText(doc, item, tableX + slW + 10, rowTop + 4, {
-        size: 8.5,
-        bold: true,
-        width: particularsW - 20
+      doc.text(item, marginX + slW + 5, rowTop + 3.5, {
+        width: particularsW - 10
       });
 
       if (amount !== "") {
-        drawText(doc, String(amount), tableX + slW + particularsW + 15, rowTop + 4, {
-          size: 8.8,
-          width: amountW - 25,
+        doc.text(String(amount), marginX + slW + particularsW, rowTop + 3.5, {
+          width: amtW - 10,
           align: "right"
         });
       }
 
-      drawLine(
-        doc,
-        tableX + slW + particularsW - 55,
-        rowTop + 14,
-        tableX + slW + particularsW - 8,
-        rowTop + 14,
-        0.25
-      );
+      rowTop += rowH;
     });
 
-    // totals block
-    const totalsStartY = tableY + headerH + particularsH;
-    drawLine(doc, tableX, totalsStartY, tableX + tableW, totalsStartY, 1);
-
-    const totalLabelW = 95;
-    drawLine(
-      doc,
-      tableX + slW + totalLabelW,
-      totalsStartY,
-      tableX + slW + totalLabelW,
-      tableY + tableH
+    // Total row
+    doc.rect(marginX, rowTop, contentW, rowH + 3).fillAndStroke(
+      COLORS.totalRowFill,
+      COLORS.navy
     );
 
-    const totalRows = [
-      ["TOTAL", payment.amount],
-      ["PAID", payment.amount],
-      ["DUES", ""]
-    ];
-
-    totalRows.forEach((row, idx) => {
-      const rowTop = totalsStartY + idx * 20;
-
-      if (idx > 0) {
-        drawLine(doc, tableX, rowTop, tableX + tableW, rowTop, 0.5);
-      }
-
-      drawText(doc, row[0], tableX + slW + 12, rowTop + 5, {
-        size: 8.7,
-        bold: true
+    doc
+      .fillColor(COLORS.navy)
+      .font("Helvetica-Bold")
+      .fontSize(7.6)
+      .text("Total", marginX + slW + 5, rowTop + 4.5, {
+        width: particularsW - 10
       });
 
-      if (row[1] !== "") {
-        drawText(
-          doc,
-          String(row[1]),
-          tableX + slW + particularsW + 15,
-          rowTop + 5,
-          {
-            size: 8.8,
-            width: amountW - 25,
-            align: "right"
-          }
-        );
-      }
+    doc.text(String(payment.amount ?? ""), marginX + slW + particularsW, rowTop + 4.5, {
+      width: amtW - 10,
+      align: "right"
     });
 
-    // watermark
-    doc.save();
-    doc.opacity(0.12);
-    drawText(doc, SCHOOL_NAME, tableX + 160, tableY + 120, {
-      size: 32,
-      bold: true,
-      width: 260,
-      align: "center"
-    });
-    doc.restore();
+    rowTop += rowH + 3;
 
-    // bottom signature
-    drawText(doc, "Authority Signatory", x + w - 150, y + h - 52, {
-      size: 8.5,
-      width: 120,
-      align: "center"
+    // vertical column separators + outer border spanning the whole table
+    doc.lineWidth(0.6).strokeColor(COLORS.navy);
+    doc
+      .moveTo(marginX + slW, tableTop)
+      .lineTo(marginX + slW, rowTop)
+      .stroke();
+
+    doc
+      .moveTo(marginX + slW + particularsW, tableTop)
+      .lineTo(marginX + slW + particularsW, rowTop)
+      .stroke();
+
+    doc.lineWidth(1).rect(marginX, tableTop, contentW, rowTop - tableTop).stroke();
+
+    y = rowTop + 10;
+
+    // ---------------- In Words ----------------
+    doc
+      .fillColor(COLORS.ink)
+      .font("Helvetica-Bold")
+      .fontSize(7.8)
+      .text("In Words:", marginX, y, { continued: false });
+
+    doc
+      .font("Helvetica")
+      .fontSize(7.8)
+      .text(amountInWords(payment.amount), marginX + 52, y, {
+        width: contentW - 52
+      });
+
+    y += 18;
+
+    // ---------------- Dues / Paid / Total summary ----------------
+    const summaryColW = contentW / 3;
+    const dues = 0; // this receipt reflects a completed transaction, no outstanding dues tracked at payment level
+
+    doc.rect(marginX, y, contentW, headerH).fill(COLORS.navy);
+
+    ["Dues (Rs.)", "Paid (Rs.)", "Total (Rs.)"].forEach((label, i) => {
+      doc
+        .fillColor(COLORS.headerText)
+        .font("Helvetica-Bold")
+        .fontSize(7.8)
+        .text(label, marginX + i * summaryColW, y + 6, {
+          width: summaryColW,
+          align: "center"
+        });
     });
 
-    drawText(doc, SCHOOL_NAME_HINDI, x + w - 160, y + h - 32, {
-      size: 8.5,
-      width: 140,
-      align: "center"
+    y += headerH;
+
+    const summaryRowH = rowH + 4;
+
+    doc.lineWidth(0.6).strokeColor(COLORS.navy);
+    doc.rect(marginX, y, contentW, summaryRowH).stroke();
+    doc
+      .moveTo(marginX + summaryColW, y)
+      .lineTo(marginX + summaryColW, y + summaryRowH)
+      .stroke();
+    doc
+      .moveTo(marginX + summaryColW * 2, y)
+      .lineTo(marginX + summaryColW * 2, y + summaryRowH)
+      .stroke();
+
+    const summaryValues = [dues, payment.amount, payment.amount];
+
+    summaryValues.forEach((value, i) => {
+      doc
+        .fillColor(COLORS.ink)
+        .font("Helvetica")
+        .fontSize(7.8)
+        .text(String(value ?? ""), marginX + i * summaryColW, y + 5, {
+          width: summaryColW,
+          align: "center"
+        });
     });
+
+    y += summaryRowH + 12;
+
+    // ---------------- Note ----------------
+    doc
+      .fillColor(COLORS.ink)
+      .font("Helvetica-Oblique")
+      .fontSize(6.6)
+      .text(DISCLAIMER_TEXT, marginX, y, { width: contentW });
+
+    // ---------------- Signature ----------------
+    doc
+      .fillColor(COLORS.ink)
+      .font("Helvetica-Bold")
+      .fontSize(8.5)
+      .text("Authority Signatory", PAGE_WIDTH - marginX - 130, PAGE_HEIGHT - 36, {
+        width: 130,
+        align: "center"
+      });
 
     doc.end();
   });

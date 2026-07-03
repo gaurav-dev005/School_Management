@@ -4,7 +4,6 @@ import { protect } from "../../../middlewares/auth.middlware.js";
 import { validate } from "../../../middlewares/validator.js";
 import { authorizeRoles } from "../../../middlewares/role.middleware.js";
 
-validate
 import {
   createStudentPaymentOrder,
   verifyStudentPaymentOrder,
@@ -12,7 +11,9 @@ import {
   phonepeCallback , 
   getMyReceipts,
   getMyReceiptById ,
-  downloadMyReceiptPdf
+  downloadMyReceiptPdf ,
+   getMyPaymentHistory,
+  getMyPaymentHistoryById
 } from "../controllers/payment.controller.js";
 
 import {
@@ -47,13 +48,30 @@ router.post(
   paytmPaymentCallback
 );
 
-router.post("/callback/phonepe" , phonepeCallback ) ;
-
-export default router;
+router.post("/callback/phonepe", phonepeCallback);
 
 
+// payment history routes (no PDF/download here — see /me/receipts for that)
 
-// receipts routes 
+router.get(
+  "/me/history",
+  protect,
+  authorizeRoles("student"),
+  getMyPaymentHistory
+);
+
+router.get(
+  "/me/history/:paymentId",
+  protect,
+  authorizeRoles("student"),
+  getMyPaymentHistoryById
+);
+
+
+
+
+
+// receipts routes
 
 router.get(
   "/me/receipts",
@@ -72,6 +90,8 @@ router.get(
   protect,
   getMyReceiptById
 );
+
+export default router;
 
 
 

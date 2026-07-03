@@ -290,7 +290,146 @@ const receipt = await Payment.findOne({
   }
 };
 
+// Student's own full payment history (all statuses — Success/Failed/Refunded),
+// NOT limited to successful payments like getMyReceipts. No receipt download
+// option here on purpose — just list + detail view.
 
+export const getMyPaymentHistory = async (req, res) => {
+  try {
+    const student = await Student.findOne({
+      userId: req.user.id
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student profile not found"
+      });
+    }
+
+    const { month, year, status, gateway, mode } = req.query;
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const filter = { student: student._id };
+
+    if (status) filter.status = status;
+    if (gateway) filter.paymentGateway = gateway;
+    if (mode) filter.paymentMode = mode;
+
+    if (month || year) {
+      if (!month || !year) {
+        return res.status(400).json({
+          success: false,
+          message: "Both month and year are required together"
+        });
+      }
+
+      const monthNum = Number(month);
+      const yearNum = Number(year);
+
+      if (!Number.isInteger(monthNum) || monthNum < 1 || monthNum > 12) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid month"
+        });
+      }
+
+      if (!Number.isInteger(yearNum) || yearNum < 2000) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid year"
+        });
+      }
+
+      filter.createdAt = {
+        $gte: new Date(yearNum, monthNum - 1, 1),
+        $lt: new Date(yearNum, monthNum, 1)
+      };
+    }
+
+    const [payments, total, totalAmountAgg] = await Promise.all([
+      Payment.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select(
+          "receiptNumber amount paymentGateway paymentMode transactionId status monthlyPayment additionalFees remarks createdAt"
+        )
+        .lean(),
+
+      Payment.countDocuments(filter),
+
+      Payment.aggregate([
+        { $match: filter },
+        { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+      ])
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      payments,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.max(Math.ceil(total / limit), 1)
+      },
+      totalAmount: totalAmountAgg[0]?.totalAmount || 0
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// Single payment detail (any status) — for the "see payment details" view.
+// Deliberately does NOT expose a PDF/download link.
+
+export const getMyPaymentHistoryById = async (req, res) => {
+  try {
+    const student = await Student.findOne({
+      userId: req.user.id
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student profile not found"
+      });
+    }
+
+    const payment = await Payment.findOne({
+      _id: req.params.paymentId,
+      student: student._id
+    }).select(
+      "receiptNumber amount paymentGateway paymentMode transactionId status monthlyPayment additionalFees remarks createdAt"
+    );
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      payment
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
 
 
 
