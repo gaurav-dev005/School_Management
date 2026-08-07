@@ -4,6 +4,8 @@ import paymentRoutes from "./modules/fee/routes/payment.routes.js";
 import studentRoutes from "./modules/student/student.routes.js"
 import userManagementRoutes from "./modules/user-management/user.routes.js"
 import enquiryRoutes from "./modules/enquiry/enquiry.routes.js"
+import noticeRoutes from "./modules/notice/notice.routes.js"
+import adminRoutes from "./modules/admin/admin.routes.js"
 
 
 
@@ -18,6 +20,8 @@ app.use("/api/students" , studentRoutes) ;
 app.use("/api/user-management" , userManagementRoutes ) ;
 app.use("/api/payments", paymentRoutes);
 app.use("/api/enquiries", enquiryRoutes);
+app.use("/api/notices", noticeRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 

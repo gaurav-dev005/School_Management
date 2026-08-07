@@ -6,12 +6,30 @@ import {
   createPaymentOrder,
   verifyPaymentOrder
 } from "../services/paymentOrder.service.js";
+import { payStudentFees } from "../services/payment.service.js";
 
 export const createStudentPaymentOrder = async (req, res) => {
   try {
-    const student = await Student.findOne({
-      userId: req.user.id
-    });
+    let student;
+
+    if (req.user.role === "admin" || req.user.role === "superadmin") {
+      // Admin/superadmin are paying on behalf of a student, so the
+      // student must be identified explicitly from the request body.
+      const { studentId } = req.body;
+
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: "studentId is required"
+        });
+      }
+
+      student = await Student.findById(studentId);
+    } else {
+      student = await Student.findOne({
+        userId: req.user.id
+      });
+    }
 
     if (!student) {
       return res.status(404).json({
@@ -240,22 +258,37 @@ export const getMyReceipts = async (req, res) => {
 
 export const getMyReceiptById = async (req, res) => {
   try {
-    const student = await Student.findOne({
-      userId: req.user.id
-    });
+    const isAdminRole = req.user.role === "admin" || req.user.role === "superadmin";
 
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student profile not found"
+    let receiptQuery;
+
+    if (isAdminRole) {
+      // Admin/superadmin can pull up any student's receipt by paymentId —
+      // they already have the paymentId from create-order/verify/cash-payment.
+      receiptQuery = {
+        _id: req.params.paymentId,
+        status: "Success"
+      };
+    } else {
+      const student = await Student.findOne({
+        userId: req.user.id
       });
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Student profile not found"
+        });
+      }
+
+      receiptQuery = {
+        _id: req.params.paymentId,
+        student: student._id,
+        status: "Success"
+      };
     }
 
-const receipt = await Payment.findOne({
-  _id: req.params.paymentId,
-  student: student._id,
-  status: "Success"
-}).populate({
+const receipt = await Payment.findOne(receiptQuery).populate({
   path: "student",
   select: "registrationNumber personal academic guardian",
   populate: [
@@ -433,11 +466,22 @@ export const getMyPaymentHistoryById = async (req, res) => {
 
 
 
-export const downloadMyReceiptPdf = async (req, res) => {
+// Admin/superadmin record a cash payment for a student. No gateway or
+// order/attempt flow involved — the payment is applied directly and saved
+// to payment history the same way, with paymentGateway "offline" and
+// paymentMode "Cash".
+export const createCashPayment = async (req, res) => {
   try {
-    const student = await Student.findOne({
-      userId: req.user.id
-    });
+    const {
+      studentId,
+      toMonth,
+      toYear,
+      additionalFeeIds,
+      transactionId,
+      remarks
+    } = req.body;
+
+    const student = await Student.findById(studentId);
 
     if (!student) {
       return res.status(404).json({
@@ -446,11 +490,70 @@ export const downloadMyReceiptPdf = async (req, res) => {
       });
     }
 
-    const payment = await Payment.findOne({
-      _id: req.params.paymentId,
-      student: student._id,
-      status: "Success"
-    }).populate({
+    const payment = await payStudentFees(
+      student._id,
+      {
+        toMonth,
+        toYear,
+        additionalFeeIds,
+        paymentGateway: "offline",
+        paymentMode: "Cash",
+        // Fixed placeholder if the frontend doesn't send one (e.g. the
+        // admin's own id).
+        transactionId: transactionId || "11111",
+        remarks
+      },
+      req.user.id
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Cash payment recorded successfully",
+      payment
+    });
+
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+export const downloadMyReceiptPdf = async (req, res) => {
+  try {
+    const isAdminRole = req.user.role === "admin" || req.user.role === "superadmin";
+
+    let paymentQuery;
+
+    if (isAdminRole) {
+      // Admin/superadmin can download any student's receipt PDF by
+      // paymentId — they already have the paymentId from
+      // create-order/verify/cash-payment.
+      paymentQuery = {
+        _id: req.params.paymentId,
+        status: "Success"
+      };
+    } else {
+      const student = await Student.findOne({
+        userId: req.user.id
+      });
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Student profile not found"
+        });
+      }
+
+      paymentQuery = {
+        _id: req.params.paymentId,
+        student: student._id,
+        status: "Success"
+      };
+    }
+
+    const payment = await Payment.findOne(paymentQuery).populate({
       path: "student",
       select: "registrationNumber personal academic guardian",
       populate: [

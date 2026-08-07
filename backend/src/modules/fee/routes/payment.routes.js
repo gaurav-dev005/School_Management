@@ -13,12 +13,14 @@ import {
   getMyReceiptById ,
   downloadMyReceiptPdf ,
    getMyPaymentHistory,
-  getMyPaymentHistoryById
+  getMyPaymentHistoryById,
+  createCashPayment
 } from "../controllers/payment.controller.js";
 
 import {
   createPaymentOrderSchema,
-  verifyPaymentOrderSchema
+  verifyPaymentOrderSchema,
+  createCashPaymentSchema
 } from "../validators/payment.validator.js";
 
 const router = express.Router();
@@ -27,7 +29,7 @@ const router = express.Router();
 router.post(
   "/me/create-order",
   protect,
-  authorizeRoles("student"),
+  authorizeRoles("student", "admin", "superadmin"),
   validate(createPaymentOrderSchema),
   createStudentPaymentOrder
 );
@@ -35,9 +37,20 @@ router.post(
 router.post(
   "/verify",
   protect,
-  authorizeRoles("student"),
+  authorizeRoles("student", "admin", "superadmin"),
   validate(verifyPaymentOrderSchema),
   verifyStudentPaymentOrder
+);
+
+// Cash payment — admin/superadmin only. Applies the payment directly
+// (no gateway/order flow) and saves it to payment history with
+// paymentGateway "offline" and paymentMode "Cash".
+router.post(
+  "/cash-payment",
+  protect,
+  authorizeRoles("admin", "superadmin"),
+  validate(createCashPaymentSchema),
+  createCashPayment
 );
 
 // Public route because Paytm calls this.

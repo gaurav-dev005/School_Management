@@ -47,7 +47,7 @@ router.put(
 router.delete(
   "/users/:id",
   protect,
-  authorizeRoles("superadmin", "admin"),
+  authorizeRoles("superadmin"),
   deleteEntity
 );
 
